@@ -12,7 +12,6 @@ import org.lyz.common.core.result.Result;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
 @Tag(name = "认证管理", description = "用户登录、登出、获取用户信息接口")
 public class AuthController {
 

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/system/tenant")
+@RequestMapping("/tenant")
 @RequiredArgsConstructor
 @Tag(name = "租户管理", description = "租户CRUD接口")
 public class TenantController {

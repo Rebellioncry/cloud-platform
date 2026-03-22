@@ -25,15 +25,17 @@ spring:
           globalcors:
             cors-configurations:
               '[/**]':
-                allowedOriginPatterns: "*"
+                allowedOriginPatterns:
+                  - "*"
                 allowedMethods:
                   - GET
                   - POST
                   - PUT
                   - DELETE
                   - OPTIONS
-                allowedHeaders: "*"
-                allowCredentials: true
+                allowedHeaders:
+                  - "*"
+                allowCredentials: false
                 maxAge: 3600
 
 knife4j:

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/system/menu")
+@RequestMapping("/menu")
 @RequiredArgsConstructor
 @Tag(name = "菜单管理", description = "菜单CRUD、菜单树接口")
 public class MenuController {

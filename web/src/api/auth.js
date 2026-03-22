@@ -10,7 +10,7 @@ export function login(username, password) {
 
 export function getUserInfo() {
   return request({
-    url: '/auth/user/info',
+    url: '/auth/userinfo',
     method: 'get'
   })
 }
@@ -24,14 +24,14 @@ export function logout() {
 
 export function getSocialUrl(platform) {
   return request({
-    url: `/auth/social/authorize/${platform}`,
+    url: `/auth/social/${platform}/authorize`,
     method: 'get'
   })
 }
 
 export function socialCallback(platform, callback) {
   return request({
-    url: `/auth/social/callback/${platform}`,
+    url: `/auth/social/${platform}/callback`,
     method: 'get',
     params: callback
   })

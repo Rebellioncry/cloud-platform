@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/system/user")
+@RequestMapping("/user")
 @RequiredArgsConstructor
 @Tag(name = "用户管理", description = "用户CRUD、角色分配、密码重置接口")
 public class UserController {

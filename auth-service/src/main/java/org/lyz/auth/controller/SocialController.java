@@ -11,7 +11,7 @@ import org.lyz.common.core.result.Result;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth/social")
+@RequestMapping("/social")
 @RequiredArgsConstructor
 @Tag(name = "社交登录", description = "第三方社交登录接口")
 public class SocialController {

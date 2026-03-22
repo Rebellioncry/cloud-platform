@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 
 @RestController
-@RequestMapping("/resource")
 @Tag(name = "资源管理", description = "文件、图片等资源相关接口")
 public class ResourceController {
 
