@@ -1,0 +1,74 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/auth/**
+
+            - id: auth-service-doc
+              uri: lb://auth-service
+              predicates:
+                - Path=/auth/v3/api-docs/**
+
+            - id: system-service
+              uri: lb://system-service
+              predicates:
+                - Path=/system/**
+
+            - id: system-service-doc
+              uri: lb://system-service
+              predicates:
+                - Path=/system/v3/api-docs/**
+
+            - id: resource-service
+              uri: lb://resource-service
+              predicates:
+                - Path=/resource/**
+              filters:
+                - StripPrefix=1
+
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOriginPatterns: "*"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: true
+                maxAge: 3600
+
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+
+sa-token:
+  token-name: Authorization
+  timeout: 86400
+  active-timeout: 1800
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-log: false
+  gateway:
+    enabled: false
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always

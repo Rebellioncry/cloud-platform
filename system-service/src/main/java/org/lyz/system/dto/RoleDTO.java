@@ -1,0 +1,22 @@
+package org.lyz.system.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+import java.util.List;
+
+@Data
+public class RoleDTO {
+    private Long id;
+    
+    @NotBlank(message = "角色编码不能为空")
+    private String roleCode;
+    
+    @NotBlank(message = "角色名称不能为空")
+    private String roleName;
+    
+    private Integer roleSort;
+    private Integer status;
+    private Integer dataScope;
+    private String remark;
+    private List<Long> menuIds;
+}

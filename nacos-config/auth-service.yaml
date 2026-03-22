@@ -1,0 +1,72 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:172.26.76.190}:${MYSQL_PORT:3306}/cloud_platform?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:root123}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:172.26.76.190}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 3000ms
+
+    mongodb:
+      uri: mongodb://${MONGO_HOST:172.26.76.190}:${MONGO_PORT:27017}/cloud_platform_logs
+
+server:
+  port: ${SERVER_PORT:8081}
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: org.lyz.auth.entity
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: assign_id
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+sa-token:
+  token-name: Authorization
+  timeout: 86400
+  active-timeout: 1800
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-log: false
+
+justauth:
+  enabled: true
+  timeout: 3000
+  cache:
+    type: redis
+  clients:
+    WECHAT:
+      client-id: ${WECHAT_APP_ID:}
+      client-secret: ${WECHAT_APP_SECRET:}
+      redirect-uri: ${APP_URL:http://localhost:8080}/auth/social/wetchat/callback
+    QQ:
+      client-id: ${QQ_APP_ID:}
+      client-secret: ${QQ_APP_SECRET:}
+      redirect-uri: ${APP_URL:http://localhost:8080}/auth/social/qq/callback
+    DINGTALK:
+      client-id: ${DINGTALK_APP_ID:}
+      client-secret: ${DINGTALK_APP_SECRET:}
+      redirect-uri: ${APP_URL:http://localhost:8080}/auth/social/dingtalk/callback
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+  cors: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'

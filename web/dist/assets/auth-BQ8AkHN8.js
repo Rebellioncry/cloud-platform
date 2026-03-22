@@ -1,0 +1,1 @@
+import{r as o}from"./request-BmLqkm-Z.js";function a(t,r){return o({url:"/auth/login",method:"post",data:{username:t,password:r}})}function e(){return o({url:"/auth/logout",method:"post"})}function l(t){return o({url:`/auth/social/authorize/${t}`,method:"get"})}export{e as a,l as g,a as l};
