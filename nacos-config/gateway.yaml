@@ -8,29 +8,20 @@ spring:
               uri: lb://auth-service
               predicates:
                 - Path=/auth/**
-
-            - id: auth-service-doc
-              uri: lb://auth-service
-              predicates:
-                - Path=/auth/v3/api-docs/**
-
+              filters:
+                - StripPrefix=1
             - id: system-service
               uri: lb://system-service
               predicates:
                 - Path=/system/**
-
-            - id: system-service-doc
-              uri: lb://system-service
-              predicates:
-                - Path=/system/v3/api-docs/**
-
+              filters:
+                - StripPrefix=1
             - id: resource-service
               uri: lb://resource-service
               predicates:
                 - Path=/resource/**
               filters:
                 - StripPrefix=1
-
           globalcors:
             cors-configurations:
               '[/**]':
@@ -45,20 +36,17 @@ spring:
                 allowCredentials: true
                 maxAge: 3600
 
-          discovery:
-            locator:
-              enabled: true
-              lower-case-service-id: true
-
-sa-token:
-  token-name: Authorization
-  timeout: 86400
-  active-timeout: 1800
-  is-concurrent: true
-  is-share: false
-  token-style: jwt
-  jwt-secret-key: ${JWT_SECRET_KEY:cloud-platform-jwt-secret-key-must-be-at-least-64-bits-long-2024}
-  is-log: false
+knife4j:
+  gateway:
+    enabled: true
+    strategy: discover
+    discover:
+      enabled: true
+      version: openapi3
+      excluded-services:
+        - gateway
+      oas3:
+        url: /v3/api-docs?group=default
 
 server:
   port: 8080

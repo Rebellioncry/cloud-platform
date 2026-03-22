@@ -27,7 +27,13 @@ public class SaTokenConfig implements WebMvcConfigurer {
             "/v3/api-docs/**",
             "/v3/api-docs",
             "/doc.html",
-            "/webjars/**"
+            "/webjars/**",
+            "/auth/v3/api-docs/**",
+            "/auth/v3/api-docs",
+            "/system/v3/api-docs/**",
+            "/system/v3/api-docs",
+            "/resource/v3/api-docs/**",
+            "/resource/v3/api-docs"
         );
     }
 }
