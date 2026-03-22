@@ -1,10 +1,9 @@
 package org.lyz.gateway.config;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConditionalOnProperty(name = "sa-token.gateway.enabled", havingValue = "true", matchIfMissing = false)
 public class SaTokenConfig {
-    // Gateway passes auth to downstream services, so no need for Sa-Token interceptor here
+    // Gateway 目前不做认证，认证由下游服务处理
+    // 如需启用 Gateway 认证，需要配置 Sa-Token JWT 模式
 }

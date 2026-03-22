@@ -37,7 +37,8 @@ sa-token:
   active-timeout: 1800
   is-concurrent: true
   is-share: false
-  token-style: uuid
+  token-style: jwt
+  jwt-secret-key: ${JWT_SECRET_KEY:cloud-platform-jwt-secret-key-must-be-at-least-64-bits-long-2024}
   is-log: false
 
 justauth:

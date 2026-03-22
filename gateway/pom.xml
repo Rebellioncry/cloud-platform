@@ -64,12 +64,6 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
 
-        <!-- Redis Reactive -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
-        </dependency>
-
         <!-- Sa-Token for Gateway -->
         <dependency>
             <groupId>cn.dev33</groupId>

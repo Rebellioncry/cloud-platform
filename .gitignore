@@ -3,6 +3,7 @@
 
 # Log files
 *.log
+*.err
 
 # BlueJ files
 *.ctxt
@@ -64,4 +65,9 @@ yarn-error.log
 
 # Logs
 logs/
-*.log
+
+# Test scripts
+test-*.ps1
+
+# Docker data
+docker/data/
