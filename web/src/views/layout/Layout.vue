@@ -11,21 +11,26 @@
         text-color="#bfcbd9"
         active-text-color="#409EFF"
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><HomeFilled /></el-icon>
-          <span>首页</span>
-        </el-menu-item>
-        
-        <el-sub-menu index="system">
-          <template #title>
-            <el-icon><Setting /></el-icon>
-            <span>系统管理</span>
-          </template>
-          <el-menu-item index="/system/user">用户管理</el-menu-item>
-          <el-menu-item index="/system/role">角色管理</el-menu-item>
-          <el-menu-item index="/system/menu">菜单管理</el-menu-item>
-          <el-menu-item index="/system/tenant">租户管理</el-menu-item>
-        </el-sub-menu>
+        <template v-for="menu in menus" :key="menu.id">
+          <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.path || menu.id">
+            <template #title>
+              <el-icon><component :is="getIcon(menu.icon)" /></el-icon>
+              <span>{{ menu.menuName }}</span>
+            </template>
+            <el-menu-item
+              v-for="child in menu.children"
+              :key="child.id"
+              :index="child.path"
+            >
+              <el-icon v-if="child.icon"><component :is="getIcon(child.icon)" /></el-icon>
+              <span>{{ child.menuName }}</span>
+            </el-menu-item>
+          </el-sub-menu>
+          <el-menu-item v-else :index="menu.path">
+            <el-icon><component :is="getIcon(menu.icon)" /></el-icon>
+            <span>{{ menu.menuName }}</span>
+          </el-menu-item>
+        </template>
       </el-menu>
     </el-aside>
     
@@ -63,15 +68,44 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { logout as logoutApi } from '@/api/auth'
+import { logout as logoutApi, getUserInfo } from '@/api/auth'
+import * as Icons from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+const iconMap = {}
+for (const [key, component] of Object.entries(Icons)) {
+  iconMap[key] = component
+}
+
+const getIcon = (name) => {
+  return iconMap[name] || iconMap['Menu']
+}
+
+const menus = computed(() => {
+  const raw = userStore.userInfo?.menus || []
+  return raw.filter(m => m.menuType === 0)
+})
+
+onMounted(async () => {
+  if (!userStore.token) {
+    router.push('/login')
+    return
+  }
+  try {
+    const res = await getUserInfo()
+    userStore.setUserInfo(res.data)
+  } catch (e) {
+    userStore.logout()
+    router.push('/login')
+  }
+})
 
 const activeMenu = computed(() => route.path)
 
@@ -83,7 +117,6 @@ const handleCommand = async (command) => {
       })
       await logoutApi()
     } catch (e) {
-      // 用户取消
     }
     userStore.logout()
     router.push('/login')

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.lyz.common.core.result.PageResult;
 import org.lyz.common.core.result.Result;
 import org.lyz.system.dto.TenantDTO;
 import org.lyz.system.entity.SysTenant;
@@ -21,16 +22,18 @@ public class TenantController {
 
     private final TenantService tenantService;
 
-    @Operation(summary = "租户列表", description = "获取所有租户列表")
+    @Operation(summary = "租户列表", description = "分页获取租户列表")
     @GetMapping("/list")
-    public Result<List<SysTenant>> list() {
-        return Result.success(tenantService.list());
+    public Result<PageResult<SysTenant>> list(
+            @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
+            @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size) {
+        return Result.success(tenantService.list(page, size));
     }
 
     @Operation(summary = "获取租户详情", description = "根据ID获取租户详细信息")
     @GetMapping("/{id}")
     public Result<TenantDTO> getById(
-            @Parameter(description = "租户ID") @PathVariable Long id) {
+            @Parameter(description = "租户ID") @PathVariable String id) {
         return Result.success(tenantService.getById(id));
     }
 
@@ -53,7 +56,7 @@ public class TenantController {
     @Operation(summary = "删除租户", description = "根据ID删除租户")
     @DeleteMapping("/{id}")
     public Result<Void> delete(
-            @Parameter(description = "租户ID") @PathVariable Long id) {
+            @Parameter(description = "租户ID") @PathVariable String id) {
         tenantService.delete(id);
         return Result.success();
     }

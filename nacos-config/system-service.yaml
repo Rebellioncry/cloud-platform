@@ -13,13 +13,18 @@ mybatis-plus:
   type-aliases-package: org.lyz.system.entity
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       id-type: assign_id
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
 
 knife4j:
   enable: true

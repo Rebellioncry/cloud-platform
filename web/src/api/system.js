@@ -39,19 +39,28 @@ export function deleteUser(id) {
   })
 }
 
+export function assignRoles(userId, roleIds) {
+  return request({
+    url: '/system/user/assign-roles',
+    method: 'put',
+    params: { userId },
+    data: roleIds
+  })
+}
+
 // 角色管理
+export function getRole(id) {
+  return request({
+    url: `/system/role/${id}`,
+    method: 'get'
+  })
+}
+
 export function getRoleList(params) {
   return request({
     url: '/system/role/list',
     method: 'get',
     params
-  })
-}
-
-export function getRole(id) {
-  return request({
-    url: `/system/role/${id}`,
-    method: 'get'
   })
 }
 
@@ -75,6 +84,15 @@ export function deleteRole(id) {
   return request({
     url: `/system/role/${id}`,
     method: 'delete'
+  })
+}
+
+export function assignMenus(roleId, menuIds) {
+  return request({
+    url: '/system/role/assign-menus',
+    method: 'put',
+    params: { roleId },
+    data: menuIds
   })
 }
 
@@ -153,5 +171,14 @@ export function deleteTenant(id) {
   return request({
     url: `/system/tenant/${id}`,
     method: 'delete'
+  })
+}
+
+// 审计日志
+export function getAuditLogList(params) {
+  return request({
+    url: '/system/audit/list',
+    method: 'get',
+    params
   })
 }

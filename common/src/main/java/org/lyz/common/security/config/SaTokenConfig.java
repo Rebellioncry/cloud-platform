@@ -22,6 +22,8 @@ public class SaTokenConfig implements WebMvcConfigurer {
         .excludePathPatterns(
             "/login",
             "/logout",
+            "/code/**",
+            "/emqx/**",
             "/social/**",
             "/actuator/**",
             "/error",

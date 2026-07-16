@@ -5,7 +5,7 @@
     </div>
     
     <el-table :data="tableData" v-loading="loading" border stripe>
-      <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column type="index" label="#" width="60" />
       <el-table-column prop="tenantCode" label="租户编码" />
       <el-table-column prop="tenantName" label="租户名称" />
       <el-table-column prop="contact" label="联系人" />
@@ -19,6 +19,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="expireTime" label="过期时间" width="180" />
+      <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>

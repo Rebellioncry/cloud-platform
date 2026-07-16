@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.lyz.common.core.result.PageResult;
 import org.lyz.common.core.result.Result;
 import org.lyz.system.dto.MenuDTO;
 import org.lyz.system.entity.SysMenu;
@@ -21,10 +22,12 @@ public class MenuController {
 
     private final MenuService menuService;
 
-    @Operation(summary = "菜单列表", description = "获取所有菜单列表")
+    @Operation(summary = "菜单列表", description = "分页获取菜单列表")
     @GetMapping("/list")
-    public Result<List<SysMenu>> list() {
-        return Result.success(menuService.list());
+    public Result<PageResult<SysMenu>> list(
+            @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
+            @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size) {
+        return Result.success(menuService.list(page, size));
     }
 
     @Operation(summary = "菜单树", description = "获取菜单树形结构")
@@ -36,7 +39,7 @@ public class MenuController {
     @Operation(summary = "获取菜单详情", description = "根据ID获取菜单详细信息")
     @GetMapping("/{id}")
     public Result<MenuDTO> getById(
-            @Parameter(description = "菜单ID") @PathVariable Long id) {
+            @Parameter(description = "菜单ID") @PathVariable String id) {
         return Result.success(menuService.getById(id));
     }
 
@@ -59,7 +62,7 @@ public class MenuController {
     @Operation(summary = "删除菜单", description = "根据ID删除菜单")
     @DeleteMapping("/{id}")
     public Result<Void> delete(
-            @Parameter(description = "菜单ID") @PathVariable Long id) {
+            @Parameter(description = "菜单ID") @PathVariable String id) {
         menuService.delete(id);
         return Result.success();
     }

@@ -14,9 +14,9 @@ import java.time.LocalDateTime;
 @Data
 @Schema(description = "基础实体")
 public class BaseEntity implements Serializable {
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.ASSIGN_UUID)
     @Schema(description = "主键ID")
-    private Long id;
+    private String id;
 
     @TableField(fill = FieldFill.INSERT)
     @Schema(description = "创建时间")

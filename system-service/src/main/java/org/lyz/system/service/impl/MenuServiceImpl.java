@@ -1,11 +1,15 @@
 package org.lyz.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import org.lyz.common.core.context.SecurityUtils;
 import org.lyz.common.core.context.TenantContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.system.dto.MenuDTO;
 import org.lyz.system.entity.SysMenu;
+import org.lyz.common.core.result.PageResult;
 import org.lyz.system.mapper.SysMenuMapper;
 import org.lyz.system.service.MenuService;
 import org.springframework.stereotype.Service;
@@ -20,27 +24,47 @@ public class MenuServiceImpl implements MenuService {
     private final SysMenuMapper menuMapper;
 
     @Override
-    public List<SysMenu> list() {
+    public PageResult<SysMenu> list(int page, int size) {
+        Page<SysMenu> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
-        String tenantId = TenantContext.getTenantId();
-        if (tenantId != null) {
-            wrapper.eq(SysMenu::getTenantId, Long.parseLong(tenantId));
+        if (!SecurityUtils.isSuperAdmin()) {
+            String tenantId = TenantContext.getTenantId();
+            if (tenantId != null) {
+                wrapper.eq(SysMenu::getTenantId, tenantId);
+            }
+        }
+        wrapper.orderByAsc(SysMenu::getOrderNum);
+        IPage<SysMenu> result = menuMapper.selectPage(pageParam, wrapper);
+        return PageResult.of(result.getTotal(), page, size, result.getRecords());
+    }
+
+    @Override
+    public List<MenuDTO> getMenuTree() {
+        List<SysMenu> menus = listAll();
+        return buildTree(menus, "0");
+    }
+
+    private List<SysMenu> listAll() {
+        LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
+        if (!SecurityUtils.isSuperAdmin()) {
+            String tenantId = TenantContext.getTenantId();
+            if (tenantId != null) {
+                wrapper.eq(SysMenu::getTenantId, tenantId);
+            }
         }
         wrapper.orderByAsc(SysMenu::getOrderNum);
         return menuMapper.selectList(wrapper);
     }
 
     @Override
-    public List<MenuDTO> getMenuTree() {
-        List<SysMenu> menus = list();
-        return buildTree(menus, 0L);
-    }
-
-    @Override
-    public MenuDTO getById(Long id) {
+    public MenuDTO getById(String id) {
         SysMenu menu = menuMapper.selectById(id);
         if (menu == null) {
             throw new BusinessException("菜单不存在");
+        }
+        String tenantId = TenantContext.getTenantId();
+        if (tenantId != null && !tenantId.equals(menu.getTenantId())) {
+            throw new BusinessException("无权访问该菜单");
         }
         return toDTO(menu);
     }
@@ -53,7 +77,7 @@ public class MenuServiceImpl implements MenuService {
         }
 
         SysMenu menu = toEntity(dto);
-        menu.setTenantId(Long.parseLong(tenantId));
+        menu.setTenantId(tenantId);
         menuMapper.insert(menu);
     }
 
@@ -67,7 +91,7 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
-    public void delete(Long id) {
+    public void delete(String id) {
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysMenu::getParentId, id);
         if (menuMapper.selectCount(wrapper) > 0) {
@@ -76,7 +100,7 @@ public class MenuServiceImpl implements MenuService {
         menuMapper.deleteById(id);
     }
 
-    private List<MenuDTO> buildTree(List<SysMenu> menus, Long parentId) {
+    private List<MenuDTO> buildTree(List<SysMenu> menus, String parentId) {
         return menus.stream()
                 .filter(m -> m.getParentId().equals(parentId))
                 .map(m -> {
@@ -100,13 +124,14 @@ public class MenuServiceImpl implements MenuService {
         dto.setOrderNum(menu.getOrderNum());
         dto.setVisible(menu.getVisible());
         dto.setStatus(menu.getStatus());
+        dto.setCreateTime(menu.getCreateTime());
         return dto;
     }
 
     private SysMenu toEntity(MenuDTO dto) {
         SysMenu menu = new SysMenu();
         menu.setId(dto.getId());
-        menu.setParentId(dto.getParentId() != null ? dto.getParentId() : 0L);
+        menu.setParentId(dto.getParentId() != null ? dto.getParentId() : "0");
         menu.setMenuName(dto.getMenuName());
         menu.setMenuType(dto.getMenuType() != null ? dto.getMenuType() : 1);
         menu.setPath(dto.getPath());

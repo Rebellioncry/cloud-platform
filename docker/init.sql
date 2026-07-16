@@ -1,142 +1,421 @@
--- Cloud Platform Database Initialization Script
+-- =============================================
+-- Nacos Config Database
+-- =============================================
+CREATE DATABASE IF NOT EXISTS nacos_config DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE nacos_config;
 
+CREATE TABLE IF NOT EXISTS config_info (
+    id bigint(20) NOT NULL AUTO_INCREMENT,
+    data_id varchar(255) NOT NULL,
+    group_id varchar(128) DEFAULT NULL,
+    content longtext NOT NULL,
+    md5 varchar(32) DEFAULT NULL,
+    gmt_create datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    gmt_modified datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    src_user text,
+    src_ip varchar(50) DEFAULT NULL,
+    app_name varchar(128) DEFAULT NULL,
+    tenant_id varchar(128) DEFAULT '',
+    c_desc varchar(256) DEFAULT NULL,
+    c_use varchar(64) DEFAULT NULL,
+    effect varchar(64) DEFAULT NULL,
+    type varchar(64) DEFAULT NULL,
+    c_schema text,
+    encrypted_data_key varchar(1024) NOT NULL DEFAULT '',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_configinfo_datagrouptenant (data_id, group_id, tenant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS config_info_gray (
+    id bigint unsigned NOT NULL AUTO_INCREMENT,
+    data_id varchar(255) NOT NULL,
+    group_id varchar(128) NOT NULL,
+    content longtext NOT NULL,
+    md5 varchar(32) DEFAULT NULL,
+    src_user text,
+    src_ip varchar(100) DEFAULT NULL,
+    gmt_create datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    gmt_modified datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    app_name varchar(128) DEFAULT NULL,
+    tenant_id varchar(128) DEFAULT '',
+    gray_name varchar(128) NOT NULL,
+    gray_rule text NOT NULL,
+    encrypted_data_key varchar(256) NOT NULL DEFAULT '',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_configinfogray (data_id, group_id, tenant_id, gray_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS config_tags_relation (
+    id bigint(20) NOT NULL,
+    tag_name varchar(128) NOT NULL,
+    tag_type varchar(64) DEFAULT NULL,
+    data_id varchar(255) NOT NULL,
+    group_id varchar(128) NOT NULL,
+    tenant_id varchar(128) DEFAULT '',
+    nid bigint(20) NOT NULL AUTO_INCREMENT,
+    PRIMARY KEY (nid),
+    UNIQUE KEY uk_configtagrelation (id, tag_name, tag_type),
+    KEY idx_tenant_id (tenant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS group_capacity (
+    id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    group_id varchar(128) NOT NULL DEFAULT '',
+    quota int(10) unsigned NOT NULL DEFAULT '0',
+    `usage` int(10) unsigned NOT NULL DEFAULT '0',
+    max_size int(10) unsigned NOT NULL DEFAULT '0',
+    max_aggr_count int(10) unsigned NOT NULL DEFAULT '0',
+    max_aggr_size int(10) unsigned NOT NULL DEFAULT '0',
+    max_history_count int(10) unsigned NOT NULL DEFAULT '0',
+    gmt_create datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    gmt_modified datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_group_id (group_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS his_config_info (
+    id bigint(20) unsigned NOT NULL,
+    nid bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    data_id varchar(255) NOT NULL,
+    group_id varchar(128) NOT NULL,
+    app_name varchar(128) DEFAULT NULL,
+    content longtext NOT NULL,
+    md5 varchar(32) DEFAULT NULL,
+    gmt_create datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    gmt_modified datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    src_user text,
+    src_ip varchar(50) DEFAULT NULL,
+    op_type char(10) DEFAULT NULL,
+    tenant_id varchar(128) DEFAULT '',
+    encrypted_data_key varchar(1024) NOT NULL DEFAULT '',
+    publish_type varchar(50) DEFAULT 'formal',
+    gray_name varchar(50) DEFAULT NULL,
+    ext_info longtext DEFAULT NULL,
+    PRIMARY KEY (nid),
+    KEY idx_gmt_create (gmt_create),
+    KEY idx_gmt_modified (gmt_modified),
+    KEY idx_did (data_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS tenant_capacity (
+    id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    tenant_id varchar(128) NOT NULL DEFAULT '',
+    quota int(10) unsigned NOT NULL DEFAULT '0',
+    `usage` int(10) unsigned NOT NULL DEFAULT '0',
+    max_size int(10) unsigned NOT NULL DEFAULT '0',
+    max_aggr_count int(10) unsigned NOT NULL DEFAULT '0',
+    max_aggr_size int(10) unsigned NOT NULL DEFAULT '0',
+    max_history_count int(10) unsigned NOT NULL DEFAULT '0',
+    gmt_create datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    gmt_modified datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_tenant_id (tenant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS tenant_info (
+    id bigint(20) NOT NULL AUTO_INCREMENT,
+    kp varchar(128) NOT NULL,
+    tenant_id varchar(128) DEFAULT '',
+    tenant_name varchar(128) DEFAULT '',
+    tenant_desc varchar(256) DEFAULT NULL,
+    create_source varchar(32) DEFAULT NULL,
+    gmt_create bigint(20) NOT NULL,
+    gmt_modified bigint(20) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_tenant_info_kptenantid (kp, tenant_id),
+    KEY idx_tenant_id (tenant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS users (
+    username varchar(50) NOT NULL,
+    password varchar(500) NOT NULL,
+    enabled tinyint(1) NOT NULL,
+    PRIMARY KEY (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS roles (
+    username varchar(50) NOT NULL,
+    role varchar(50) NOT NULL,
+    UNIQUE KEY uk_user_role (username, role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS permissions (
+    role varchar(50) NOT NULL,
+    resource varchar(128) NOT NULL,
+    action varchar(8) NOT NULL,
+    UNIQUE KEY uk_role_permission (role, resource, action)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO users (username, password, enabled) VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', 1);
+INSERT INTO roles (username, role) VALUES ('nacos', 'ROLE_ADMIN');
+
+-- =============================================
+-- Cloud Platform Database
+-- =============================================
 CREATE DATABASE IF NOT EXISTS cloud_platform DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE cloud_platform;
 
--- Tenant Table
 CREATE TABLE IF NOT EXISTS sys_tenant (
-    id BIGINT NOT NULL COMMENT '主键',
-    tenant_code VARCHAR(50) NOT NULL COMMENT '租户编码',
-    tenant_name VARCHAR(100) NOT NULL COMMENT '租户名称',
-    contact VARCHAR(50) COMMENT '联系人',
-    mobile VARCHAR(20) COMMENT '手机号',
-    email VARCHAR(100) COMMENT '邮箱',
-    status TINYINT DEFAULT 1 COMMENT '状态(0禁用1正常)',
-    expire_time DATETIME COMMENT '过期时间',
-    remark VARCHAR(500) COMMENT '备注',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    deleted TINYINT DEFAULT 0 COMMENT '逻辑删除',
-    version INT DEFAULT 0 COMMENT '版本号',
+    id VARCHAR(32) NOT NULL,
+    tenant_code VARCHAR(50) NOT NULL,
+    tenant_name VARCHAR(100) NOT NULL,
+    contact VARCHAR(50) DEFAULT NULL,
+    mobile VARCHAR(20) DEFAULT NULL,
+    email VARCHAR(100) DEFAULT NULL,
+    status TINYINT DEFAULT 1,
+    expire_time DATETIME DEFAULT NULL,
+    remark VARCHAR(500) DEFAULT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
     PRIMARY KEY (id),
     UNIQUE KEY uk_tenant_code (tenant_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='租户表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- User Table
 CREATE TABLE IF NOT EXISTS sys_user (
-    id BIGINT NOT NULL COMMENT '主键',
-    tenant_id BIGINT NOT NULL DEFAULT 1 COMMENT '租户ID',
-    username VARCHAR(50) NOT NULL COMMENT '用户名',
-    password VARCHAR(100) COMMENT '密码',
-    nickname VARCHAR(50) COMMENT '昵称',
-    email VARCHAR(100) COMMENT '邮箱',
-    mobile VARCHAR(20) COMMENT '手机号',
-    avatar VARCHAR(255) COMMENT '头像',
-    status TINYINT DEFAULT 1 COMMENT '状态(0禁用1正常)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    deleted TINYINT DEFAULT 0 COMMENT '逻辑删除',
-    version INT DEFAULT 0 COMMENT '版本号',
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(100) DEFAULT NULL,
+    nickname VARCHAR(50) DEFAULT NULL,
+    email VARCHAR(100) DEFAULT NULL,
+    mobile VARCHAR(20) DEFAULT NULL,
+    avatar VARCHAR(255) DEFAULT NULL,
+    status TINYINT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
     PRIMARY KEY (id),
     UNIQUE KEY uk_username_tenant (username, tenant_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Role Table
 CREATE TABLE IF NOT EXISTS sys_role (
-    id BIGINT NOT NULL COMMENT '主键',
-    tenant_id BIGINT NOT NULL DEFAULT 1 COMMENT '租户ID',
-    role_code VARCHAR(50) NOT NULL COMMENT '角色编码',
-    role_name VARCHAR(50) NOT NULL COMMENT '角色名称',
-    role_sort INT DEFAULT 0 COMMENT '排序',
-    status TINYINT DEFAULT 1 COMMENT '状态(0禁用1正常)',
-    data_scope TINYINT DEFAULT 1 COMMENT '数据权限(1全部2本部门及以下3本部门4仅本人5自定义)',
-    remark VARCHAR(255) COMMENT '备注',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    deleted TINYINT DEFAULT 0 COMMENT '逻辑删除',
-    version INT DEFAULT 0 COMMENT '版本号',
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    role_code VARCHAR(50) NOT NULL,
+    role_name VARCHAR(50) NOT NULL,
+    role_sort INT DEFAULT 0,
+    status TINYINT DEFAULT 1,
+    data_scope TINYINT DEFAULT 1,
+    remark VARCHAR(255) DEFAULT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
     PRIMARY KEY (id),
     UNIQUE KEY uk_role_code_tenant (role_code, tenant_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Menu Table
 CREATE TABLE IF NOT EXISTS sys_menu (
-    id BIGINT NOT NULL COMMENT '主键',
-    tenant_id BIGINT NOT NULL DEFAULT 1 COMMENT '租户ID',
-    parent_id BIGINT DEFAULT 0 COMMENT '父菜单ID',
-    menu_type TINYINT NOT NULL DEFAULT 1 COMMENT '菜单类型(0目录1菜单2按钮)',
-    menu_name VARCHAR(50) NOT NULL COMMENT '菜单名称',
-    path VARCHAR(200) COMMENT '路由地址',
-    component VARCHAR(255) COMMENT '组件路径',
-    icon VARCHAR(100) COMMENT '图标',
-    perms VARCHAR(100) COMMENT '权限标识',
-    order_num INT DEFAULT 0 COMMENT '排序',
-    visible TINYINT DEFAULT 1 COMMENT '是否显示(0否1是)',
-    status TINYINT DEFAULT 1 COMMENT '状态(0禁用1正常)',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    deleted TINYINT DEFAULT 0 COMMENT '逻辑删除',
-    version INT DEFAULT 0 COMMENT '版本号',
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    parent_id VARCHAR(32) DEFAULT '0',
+    menu_type TINYINT NOT NULL DEFAULT 1,
+    menu_name VARCHAR(50) NOT NULL,
+    path VARCHAR(200) DEFAULT NULL,
+    component VARCHAR(255) DEFAULT NULL,
+    icon VARCHAR(100) DEFAULT NULL,
+    perms VARCHAR(100) DEFAULT NULL,
+    order_num INT DEFAULT 0,
+    visible TINYINT DEFAULT 1,
+    status TINYINT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
     PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='菜单表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- User Role Relation
 CREATE TABLE IF NOT EXISTS sys_user_role (
-    id BIGINT NOT NULL COMMENT '主键',
-    user_id BIGINT NOT NULL COMMENT '用户ID',
-    role_id BIGINT NOT NULL COMMENT '角色ID',
+    id VARCHAR(32) NOT NULL,
+    user_id VARCHAR(32) NOT NULL,
+    role_id VARCHAR(32) NOT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uk_user_role (user_id, role_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户角色关联表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Role Menu Relation
 CREATE TABLE IF NOT EXISTS sys_role_menu (
-    id BIGINT NOT NULL COMMENT '主键',
-    role_id BIGINT NOT NULL COMMENT '角色ID',
-    menu_id BIGINT NOT NULL COMMENT '菜单ID',
+    id VARCHAR(32) NOT NULL,
+    role_id VARCHAR(32) NOT NULL,
+    menu_id VARCHAR(32) NOT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uk_role_menu (role_id, menu_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色菜单关联表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Social Login Binding Table
 CREATE TABLE IF NOT EXISTS sys_social (
-    id BIGINT NOT NULL COMMENT '主键',
-    user_id BIGINT NOT NULL COMMENT '用户ID',
-    tenant_id BIGINT NOT NULL DEFAULT 1 COMMENT '租户ID',
-    platform VARCHAR(20) NOT NULL COMMENT '平台(wetchat/qq/dingtalk)',
-    openid VARCHAR(100) NOT NULL COMMENT '第三方OpenId',
-    unionid VARCHAR(100) COMMENT '微信UnionId',
-    nickname VARCHAR(50) COMMENT '昵称',
-    avatar VARCHAR(255) COMMENT '头像',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    id VARCHAR(32) NOT NULL,
+    user_id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    platform VARCHAR(20) NOT NULL,
+    openid VARCHAR(100) NOT NULL,
+    unionid VARCHAR(100) DEFAULT NULL,
+    nickname VARCHAR(50) DEFAULT NULL,
+    avatar VARCHAR(255) DEFAULT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_platform_openid_tenant (platform, openid, tenant_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='第三方登录绑定表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insert Default Tenant
+-- Default data (short string IDs)
+SET @tenant_id = '1';
+SET @admin_user_id = '2';
+SET @admin_role_id = '3';
+SET @menu_system = '10';
+SET @menu_user = '11';
+SET @menu_role = '12';
+SET @menu_menu = '13';
+SET @menu_tenant = '14';
+SET @menu_dashboard = '15';
+SET @menu_iot = '20';
+SET @menu_iot_product = '21';
+SET @menu_iot_device = '22';
+SET @menu_iot_mqtt = '23';
+SET @menu_audit = '16';
+
 INSERT INTO sys_tenant (id, tenant_code, tenant_name, contact, mobile, email, status)
-VALUES (1, 'DEFAULT', '默认租户', '管理员', '13800138000', 'admin@example.com', 1);
+VALUES (@tenant_id, 'DEFAULT', 'Default Tenant', 'Admin', '13800138000', 'admin@example.com', 1);
 
--- Insert Default Admin User (password: 123456)
 INSERT INTO sys_user (id, tenant_id, username, password, nickname, email, mobile, status)
-VALUES (1, 1, 'admin', '123456', '管理员', 'admin@example.com', '13800138000', 1);
+VALUES (@admin_user_id, '', 'admin', '123456', 'Admin', 'admin@example.com', '13800138000', 1);
 
--- Insert Default Role
 INSERT INTO sys_role (id, tenant_id, role_code, role_name, role_sort, status, data_scope)
-VALUES (1, 1, 'SUPER_ADMIN', '超级管理员', 1, 1, 1);
+VALUES (@admin_role_id, @tenant_id, 'SUPER_ADMIN', 'Super Admin', 1, 1, 1);
 
--- Insert Default Menus
-INSERT INTO sys_menu (id, parent_id, menu_type, menu_name, path, component, icon, perms, order_num) VALUES
-(1, 0, 0, '系统管理', '/system', NULL, 'Setting', '', 1),
-(2, 1, 1, '用户管理', '/system/user', 'system/user/index', 'User', 'system:user:list', 1),
-(3, 1, 1, '角色管理', '/system/role', 'system/role/index', 'Role', 'system:role:list', 2),
-(4, 1, 1, '菜单管理', '/system/menu', 'system/menu/index', 'Menu', 'system:menu:list', 3),
-(5, 1, 1, '租户管理', '/system/tenant', 'system/tenant/index', 'OfficeBuilding', 'system:tenant:list', 4),
-(10, 0, 0, 'Dashboard', '/dashboard', 'dashboard/index', 'HomeFilled', '', 0);
+INSERT INTO sys_menu (id, tenant_id, parent_id, menu_type, menu_name, path, component, icon, perms, order_num) VALUES
+(@menu_dashboard, @tenant_id, '0', 0, '首页', '/dashboard', 'dashboard/index', 'HomeFilled', '', 0),
+(@menu_iot, @tenant_id, '0', 0, 'IoT平台', '/iot', NULL, 'Monitor', '', 1),
+(@menu_iot_product, @tenant_id, @menu_iot, 1, '产品管理', '/iot/product', 'iot/product/index', 'Box', 'iot:product:list', 1),
+(@menu_iot_device, @tenant_id, @menu_iot, 1, '设备管理', '/iot/device', 'iot/device/index', 'Cpu', 'iot:device:list', 2),
+(@menu_iot_mqtt, @tenant_id, @menu_iot, 1, 'MQTT配置', '/iot/mqtt', 'iot/mqtt/index', 'Connection', 'iot:mqtt:list', 3),
+(@menu_system, @tenant_id, '0', 0, '系统管理', '/system', NULL, 'Setting', '', 2),
+(@menu_user, @tenant_id, @menu_system, 1, '用户管理', '/system/user', 'system/user/index', 'User', 'system:user:list', 1),
+(@menu_role, @tenant_id, @menu_system, 1, '角色管理', '/system/role', 'system/role/index', 'UserFilled', 'system:role:list', 2),
+(@menu_menu, @tenant_id, @menu_system, 1, '菜单管理', '/system/menu', 'system/menu/index', 'Grid', 'system:menu:list', 3),
+(@menu_tenant, @tenant_id, @menu_system, 1, '租户管理', '/system/tenant', 'system/tenant/index', 'OfficeBuilding', 'system:tenant:list', 4),
+(@menu_audit, @tenant_id, @menu_system, 1, '审计日志', '/system/audit', 'system/audit/index', 'Document', 'system:audit:list', 5);
 
--- Assign Admin to Role
-INSERT INTO sys_user_role (id, user_id, role_id) VALUES (1, 1, 1);
+INSERT INTO sys_user_role (id, user_id, role_id)
+VALUES ('20', @admin_user_id, @admin_role_id);
 
--- Assign All Menus to Super Admin
-INSERT INTO sys_role_menu (role_id, menu_id) 
-SELECT 1, id FROM sys_menu WHERE tenant_id = 1;
+INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES
+('30', @admin_role_id, @menu_dashboard),
+('31', @admin_role_id, @menu_iot),
+('32', @admin_role_id, @menu_iot_product),
+('33', @admin_role_id, @menu_iot_device),
+('34', @admin_role_id, @menu_iot_mqtt),
+('35', @admin_role_id, @menu_system),
+('36', @admin_role_id, @menu_user),
+('37', @admin_role_id, @menu_role),
+('38', @admin_role_id, @menu_menu),
+('39', @admin_role_id, @menu_tenant),
+('40', @admin_role_id, @menu_audit);
+
+-- IoT Product Table
+CREATE TABLE IF NOT EXISTS iot_product (
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    parent_id VARCHAR(32) DEFAULT NULL,
+    product_key VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(500) DEFAULT NULL,
+    node_type TINYINT DEFAULT 0,
+    protocol VARCHAR(20) DEFAULT 'MQTT',
+    data_format TINYINT DEFAULT 0,
+    thing_model JSON DEFAULT NULL,
+    model_status TINYINT DEFAULT 0,
+    status TINYINT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_product_key (product_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- IoT Device Table
+CREATE TABLE IF NOT EXISTS iot_device (
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    product_id VARCHAR(32) NOT NULL,
+    product_key VARCHAR(20) NOT NULL,
+    parent_device_id VARCHAR(32) DEFAULT NULL,
+    device_name VARCHAR(100) NOT NULL,
+    device_key VARCHAR(64) NOT NULL,
+    nickname VARCHAR(100) DEFAULT NULL,
+    status TINYINT DEFAULT 0,
+    ip_address VARCHAR(50) DEFAULT NULL,
+    firmware_version VARCHAR(50) DEFAULT NULL,
+    tags JSON DEFAULT NULL,
+    last_online_time DATETIME DEFAULT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_device_key (device_key),
+    KEY idx_product_id (product_id),
+    KEY idx_tenant_product (tenant_id, product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- IoT Device Shadow Table
+CREATE TABLE IF NOT EXISTS iot_device_shadow (
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    device_id VARCHAR(32) NOT NULL,
+    property_identifier VARCHAR(64) NOT NULL,
+    desired_value JSON DEFAULT NULL,
+    desired_version BIGINT DEFAULT 0,
+    desired_time DATETIME DEFAULT NULL,
+    reported_value JSON DEFAULT NULL,
+    reported_version BIGINT DEFAULT 0,
+    reported_time DATETIME DEFAULT NULL,
+    metadata JSON DEFAULT NULL,
+    version BIGINT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_shadow_device_prop (device_id, property_identifier)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- IoT Device Command Table
+CREATE TABLE IF NOT EXISTS iot_device_command (
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    device_id VARCHAR(32) NOT NULL,
+    command_type VARCHAR(20) NOT NULL,
+    identifier VARCHAR(64) NOT NULL,
+    input_data JSON DEFAULT NULL,
+    output_data JSON DEFAULT NULL,
+    status TINYINT DEFAULT 0,
+    request_id VARCHAR(64) DEFAULT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_command_device (device_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- IoT MQTT Config Table
+CREATE TABLE IF NOT EXISTS iot_mqtt_config (
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    name VARCHAR(50) NOT NULL,
+    description VARCHAR(200) DEFAULT NULL,
+    broker VARCHAR(200) NOT NULL,
+    port INT DEFAULT 1883,
+    username VARCHAR(100) DEFAULT NULL,
+    password VARCHAR(100) DEFAULT NULL,
+    client_id_prefix VARCHAR(50) DEFAULT 'iot-service',
+    shared_group VARCHAR(50) DEFAULT 'iot-service',
+    qos INT DEFAULT 1,
+    keep_alive INT DEFAULT 60,
+    auto_reconnect TINYINT DEFAULT 1,
+    use_ssl TINYINT DEFAULT 0,
+    status TINYINT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

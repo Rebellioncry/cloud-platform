@@ -3,13 +3,14 @@ package org.lyz.system.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @Schema(description = "角色DTO")
 public class RoleDTO {
     @Schema(description = "主键ID")
-    private Long id;
+    private String id;
     
     @NotBlank(message = "角色编码不能为空")
     @Schema(description = "角色编码", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -28,5 +29,7 @@ public class RoleDTO {
     @Schema(description = "备注")
     private String remark;
     @Schema(description = "菜单ID列表")
-    private List<Long> menuIds;
+    private List<String> menuIds;
+    @Schema(description = "创建时间")
+    private LocalDateTime createTime;
 }

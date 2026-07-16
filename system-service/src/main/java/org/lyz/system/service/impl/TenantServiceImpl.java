@@ -1,10 +1,13 @@
 package org.lyz.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.system.dto.TenantDTO;
 import org.lyz.system.entity.SysTenant;
+import org.lyz.common.core.result.PageResult;
 import org.lyz.system.mapper.SysTenantMapper;
 import org.lyz.system.service.TenantService;
 import org.springframework.stereotype.Service;
@@ -17,12 +20,14 @@ public class TenantServiceImpl implements TenantService {
     private final SysTenantMapper tenantMapper;
 
     @Override
-    public List<SysTenant> list() {
-        return tenantMapper.selectList(new LambdaQueryWrapper<>());
+    public PageResult<SysTenant> list(int page, int size) {
+        Page<SysTenant> pageParam = new Page<>(page, size);
+        IPage<SysTenant> result = tenantMapper.selectPage(pageParam, new LambdaQueryWrapper<>());
+        return PageResult.of(result.getTotal(), page, size, result.getRecords());
     }
 
     @Override
-    public TenantDTO getById(Long id) {
+    public TenantDTO getById(String id) {
         SysTenant tenant = tenantMapper.selectById(id);
         if (tenant == null) {
             throw new BusinessException("租户不存在");
@@ -51,7 +56,7 @@ public class TenantServiceImpl implements TenantService {
     }
 
     @Override
-    public void delete(Long id) {
+    public void delete(String id) {
         tenantMapper.deleteById(id);
     }
 

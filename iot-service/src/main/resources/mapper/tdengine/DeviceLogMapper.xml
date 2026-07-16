@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.lyz.iot.mapper.tdengine.DeviceLogMapper">
+
+    <insert id="insert">
+        INSERT INTO device_log_${l.deviceId} USING device_log
+        TAGS (#{l.deviceId}, #{l.productKey}, #{l.deviceName})
+        VALUES (#{l.ts}, #{l.logType}, #{l.content}, #{l.messageId})
+    </insert>
+
+    <select id="selectByDevice" resultType="org.lyz.iot.entity.IotDeviceLog">
+        SELECT ts, log_type, content, message_id, device_id, product_key, device_name
+        FROM device_log
+        WHERE device_id = #{deviceId}
+        <if test="logType != null and logType != ''">
+            AND log_type = #{logType}
+        </if>
+        AND ts >= #{startTime} AND ts &lt;= #{endTime}
+        ORDER BY ts DESC
+    </select>
+
+</mapper>

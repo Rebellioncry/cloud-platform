@@ -41,6 +41,36 @@ const routes = [
         name: 'Tenant',
         component: () => import('@/views/system/Tenant.vue'),
         meta: { title: '租户管理', icon: 'OfficeBuilding' }
+      },
+      {
+        path: 'system/audit',
+        name: 'AuditLog',
+        component: () => import('@/views/system/AuditLog.vue'),
+        meta: { title: '审计日志', icon: 'Document' }
+      },
+      {
+        path: 'iot/product',
+        name: 'IotProduct',
+        component: () => import('@/views/iot/Product.vue'),
+        meta: { title: '产品管理', icon: 'Box' }
+      },
+      {
+        path: 'iot/device',
+        name: 'IotDevice',
+        component: () => import('@/views/iot/Device.vue'),
+        meta: { title: '设备管理', icon: 'Monitor' }
+      },
+      {
+        path: 'iot/device/:id',
+        name: 'IotDeviceDetail',
+        component: () => import('@/views/iot/DeviceDetail.vue'),
+        meta: { title: '设备详情', icon: 'Monitor', hidden: true }
+      },
+      {
+        path: 'iot/mqtt',
+        name: 'IotMqtt',
+        component: () => import('@/views/iot/MqttConfig.vue'),
+        meta: { title: 'MQTT配置', icon: 'Connection' }
       }
     ]
   }

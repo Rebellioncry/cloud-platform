@@ -12,7 +12,7 @@ import org.lyz.common.core.entity.BaseEntity;
 @Schema(description = "角色")
 public class SysRole extends BaseEntity {
     @Schema(description = "租户ID")
-    private Long tenantId;
+    private String tenantId;
     @Schema(description = "角色编码")
     private String roleCode;
     @Schema(description = "角色名称")

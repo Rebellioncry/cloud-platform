@@ -10,11 +10,11 @@ import lombok.Data;
 @TableName("sys_user_role")
 @Schema(description = "用户角色关联")
 public class SysUserRole {
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.ASSIGN_UUID)
     @Schema(description = "主键ID")
-    private Long id;
+    private String id;
     @Schema(description = "用户ID")
-    private Long userId;
+    private String userId;
     @Schema(description = "角色ID")
-    private Long roleId;
+    private String roleId;
 }

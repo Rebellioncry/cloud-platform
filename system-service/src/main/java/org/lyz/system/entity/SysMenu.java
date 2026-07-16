@@ -12,9 +12,9 @@ import org.lyz.common.core.entity.BaseEntity;
 @Schema(description = "菜单")
 public class SysMenu extends BaseEntity {
     @Schema(description = "租户ID")
-    private Long tenantId;
+    private String tenantId;
     @Schema(description = "父菜单ID")
-    private Long parentId;
+    private String parentId;
     @Schema(description = "菜单类型")
     private Integer menuType;
     @Schema(description = "菜单名称")

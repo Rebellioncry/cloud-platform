@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,9 +12,9 @@ import java.util.List;
 @Schema(description = "菜单DTO")
 public class MenuDTO {
     @Schema(description = "主键ID")
-    private Long id;
+    private String id;
     @Schema(description = "父菜单ID")
-    private Long parentId;
+    private String parentId;
     
     @NotBlank(message = "菜单名称不能为空")
     @Schema(description = "菜单名称", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -38,4 +39,6 @@ public class MenuDTO {
     
     @Schema(description = "子菜单")
     private List<MenuDTO> children = new ArrayList<>();
+    @Schema(description = "创建时间")
+    private LocalDateTime createTime;
 }

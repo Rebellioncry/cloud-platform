@@ -5,7 +5,7 @@
     </div>
     
     <el-table :data="tableData" v-loading="loading" border stripe>
-      <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column type="index" label="#" width="60" />
       <el-table-column prop="roleCode" label="角色编码" />
       <el-table-column prop="roleName" label="角色名称" />
       <el-table-column prop="roleSort" label="排序" width="80" />
@@ -16,11 +16,16 @@
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column prop="remark" label="备注" />
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="250" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          <template v-if="row.roleCode !== 'SUPER_ADMIN'">
+            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button link type="primary" @click="handleMenus(row)">菜单</el-button>
+            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          </template>
+          <el-tag v-else type="info" size="small">系统内置</el-tag>
         </template>
       </el-table-column>
     </el-table>
@@ -51,20 +56,45 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="menuDialogVisible" title="分配菜单" width="500px">
+      <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+        <el-checkbox v-model="allMenuChecked" :indeterminate="allMenuIndeterminate" @change="handleCheckAllMenu">全选/取消全选</el-checkbox>
+      </div>
+      <el-tree
+        ref="menuTreeRef"
+        :data="menuTreeData"
+        :props="{ label: 'menuName', children: 'children' }"
+        show-checkbox
+        node-key="id"
+        default-expand-all
+        @check-change="updateCheckAllState"
+      />
+      <template #footer>
+        <el-button @click="menuDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmitMenus">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getRoleList, addRole, updateRole, deleteRole } from '@/api/system'
+import { getRoleList, addRole, updateRole, deleteRole, getMenuTree, assignMenus, getRole } from '@/api/system'
 
 const loading = ref(false)
 const tableData = ref([])
 const dialogVisible = ref(false)
+const menuDialogVisible = ref(false)
 const formRef = ref()
+const menuTreeRef = ref()
+const menuTreeData = ref([])
+const allMenuChecked = ref(false)
+const allMenuIndeterminate = ref(false)
 const isEdit = computed(() => !!form.id)
 const dialogTitle = computed(() => isEdit.value ? '编辑角色' : '新增角色')
+let currentRoleId = ''
 
 const form = reactive({
   id: null,
@@ -100,6 +130,69 @@ const handleAdd = () => {
 const handleEdit = (row) => {
   Object.assign(form, { ...row })
   dialogVisible.value = true
+}
+
+const handleMenus = async (row) => {
+  currentRoleId = row.id
+  try {
+    const [treeRes, roleRes] = await Promise.all([getMenuTree(), getRole(row.id)])
+    menuTreeData.value = treeRes.data || []
+    menuDialogVisible.value = true
+    await nextTick()
+    if (menuTreeRef.value) {
+      const menuIds = roleRes.data?.menuIds || []
+      menuTreeRef.value.setCheckedKeys(menuIds.map(String))
+    }
+    updateCheckAllState()
+  } catch (error) {
+    console.error('加载菜单失败:', error)
+  }
+}
+
+const handleSubmitMenus = async () => {
+  if (!menuTreeRef.value) return
+  const checkedKeys = menuTreeRef.value.getCheckedKeys()
+  const halfCheckedKeys = menuTreeRef.value.getHalfCheckedKeys()
+  const menuIds = [...checkedKeys, ...halfCheckedKeys].map(String)
+  try {
+    await assignMenus(currentRoleId, menuIds)
+    ElMessage.success('菜单分配成功')
+    menuDialogVisible.value = false
+  } catch (error) {
+    console.error('分配菜单失败:', error)
+  }
+}
+
+function getAllLeafAndParentKeys(data) {
+  const keys = []
+  function walk(nodes) {
+    for (const n of nodes) {
+      keys.push(n.id)
+      if (n.children && n.children.length) walk(n.children)
+    }
+  }
+  walk(data)
+  return keys
+}
+
+const handleCheckAllMenu = (val) => {
+  if (!menuTreeRef.value) return
+  if (val) {
+    menuTreeRef.value.setCheckedKeys(getAllLeafAndParentKeys(menuTreeData.value))
+  } else {
+    menuTreeRef.value.setCheckedKeys([])
+  }
+  allMenuIndeterminate.value = false
+}
+
+const updateCheckAllState = () => {
+  if (!menuTreeRef.value) return
+  const allKeys = getAllLeafAndParentKeys(menuTreeData.value)
+  const checked = menuTreeRef.value.getCheckedKeys()
+  const half = menuTreeRef.value.getHalfCheckedKeys()
+  const total = checked.length + half.length
+  allMenuChecked.value = total === allKeys.length
+  allMenuIndeterminate.value = total > 0 && total < allKeys.length
 }
 
 const handleDelete = async (row) => {

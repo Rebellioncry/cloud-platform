@@ -9,6 +9,6 @@ import java.util.List;
 
 @Mapper
 public interface SysUserMapper extends BaseMapper<SysUser> {
-    void deleteUserRoles(@Param("userId") Long userId);
-    void insertUserRoles(@Param("userId") Long userId, @Param("roleIds") List<Long> roleIds);
+    void deleteUserRoles(@Param("userId") String userId);
+    void insertUserRoles(@Param("userId") String userId, @Param("roleIds") List<String> roleIds);
 }

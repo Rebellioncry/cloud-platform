@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.lyz.common.core.result.PageResult;
 import org.lyz.common.core.result.Result;
 import org.lyz.system.dto.RoleDTO;
 import org.lyz.system.entity.SysRole;
@@ -21,16 +22,18 @@ public class RoleController {
 
     private final RoleService roleService;
 
-    @Operation(summary = "角色列表", description = "获取所有角色列表")
+    @Operation(summary = "角色列表", description = "分页获取角色列表")
     @GetMapping("/list")
-    public Result<List<SysRole>> list() {
-        return Result.success(roleService.list());
+    public Result<PageResult<SysRole>> list(
+            @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
+            @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size) {
+        return Result.success(roleService.list(page, size));
     }
 
     @Operation(summary = "获取角色详情", description = "根据ID获取角色详细信息")
     @GetMapping("/{id}")
     public Result<RoleDTO> getById(
-            @Parameter(description = "角色ID") @PathVariable Long id) {
+            @Parameter(description = "角色ID") @PathVariable String id) {
         return Result.success(roleService.getById(id));
     }
 
@@ -53,7 +56,7 @@ public class RoleController {
     @Operation(summary = "删除角色", description = "根据ID删除角色")
     @DeleteMapping("/{id}")
     public Result<Void> delete(
-            @Parameter(description = "角色ID") @PathVariable Long id) {
+            @Parameter(description = "角色ID") @PathVariable String id) {
         roleService.delete(id);
         return Result.success();
     }
@@ -61,8 +64,8 @@ public class RoleController {
     @Operation(summary = "分配菜单", description = "给角色分配菜单权限")
     @PutMapping("/assign-menus")
     public Result<Void> assignMenus(
-            @Parameter(description = "角色ID") @RequestParam Long roleId,
-            @Parameter(description = "菜单ID列表") @RequestBody List<Long> menuIds) {
+            @Parameter(description = "角色ID") @RequestParam(value = "roleId") String roleId,
+            @Parameter(description = "菜单ID列表") @RequestBody List<String> menuIds) {
         roleService.assignMenus(roleId, menuIds);
         return Result.success();
     }

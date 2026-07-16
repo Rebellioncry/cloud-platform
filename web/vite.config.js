@@ -10,19 +10,43 @@ export default defineConfig({
     }
   },
   server: {
-    port: 5173,
+    port: 9000,
     proxy: {
       '/auth': {
         target: 'http://localhost:8080',
-        changeOrigin: true
+        changeOrigin: true,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        }
       },
       '/system': {
         target: 'http://localhost:8080',
-        changeOrigin: true
+        changeOrigin: true,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        }
       },
       '/resource': {
         target: 'http://localhost:8080',
-        changeOrigin: true
+        changeOrigin: true,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        }
+      },
+      '/iot': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html'
+          }
+        }
       }
     }
   }

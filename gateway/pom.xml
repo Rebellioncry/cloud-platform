@@ -48,6 +48,19 @@
             <version>${sa-token.version}</version>
         </dependency>
 
+        <!-- Sa-Token Redis Session -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-redis-jackson</artifactId>
+            <version>${sa-token.version}</version>
+        </dependency>
+
+        <!-- Redis -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+        </dependency>
+
         <!-- Knife4j Gateway Aggregation -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>

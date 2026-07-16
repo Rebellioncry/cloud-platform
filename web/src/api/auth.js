@@ -8,6 +8,22 @@ export function login(username, password) {
   })
 }
 
+export function sendCode(type, target) {
+  return request({
+    url: '/auth/code/send',
+    method: 'post',
+    data: { type, ...target }
+  })
+}
+
+export function codeLogin(type, target, code) {
+  return request({
+    url: '/auth/code/login',
+    method: 'post',
+    data: { type, ...target, code }
+  })
+}
+
 export function getUserInfo() {
   return request({
     url: '/auth/userinfo',
@@ -19,20 +35,5 @@ export function logout() {
   return request({
     url: '/auth/logout',
     method: 'post'
-  })
-}
-
-export function getSocialUrl(platform) {
-  return request({
-    url: `/auth/social/${platform}/authorize`,
-    method: 'get'
-  })
-}
-
-export function socialCallback(platform, callback) {
-  return request({
-    url: `/auth/social/${platform}/callback`,
-    method: 'get',
-    params: callback
   })
 }

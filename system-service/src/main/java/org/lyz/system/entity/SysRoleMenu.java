@@ -10,11 +10,11 @@ import lombok.Data;
 @TableName("sys_role_menu")
 @Schema(description = "角色菜单关联")
 public class SysRoleMenu {
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.ASSIGN_UUID)
     @Schema(description = "主键ID")
-    private Long id;
+    private String id;
     @Schema(description = "角色ID")
-    private Long roleId;
+    private String roleId;
     @Schema(description = "菜单ID")
-    private Long menuId;
+    private String menuId;
 }

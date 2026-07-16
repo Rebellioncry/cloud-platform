@@ -17,13 +17,13 @@ import java.time.LocalDateTime;
 @TableName("sys_social")
 @Schema(description = "社交账号绑定")
 public class SysSocial {
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.ASSIGN_UUID)
     @Schema(description = "主键ID")
-    private Long id;
+    private String id;
     @Schema(description = "用户ID")
-    private Long userId;
+    private String userId;
     @Schema(description = "租户ID")
-    private Long tenantId;
+    private String tenantId;
     @Schema(description = "平台")
     private String platform;
     @Schema(description = "OpenID")

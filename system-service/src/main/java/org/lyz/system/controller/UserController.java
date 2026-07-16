@@ -5,9 +5,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.lyz.common.core.result.PageResult;
 import org.lyz.common.core.result.Result;
 import org.lyz.system.dto.UserDTO;
-import org.lyz.common.core.entity.SysUser;
 import org.lyz.system.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,16 +21,18 @@ public class UserController {
 
     private final UserService userService;
 
-    @Operation(summary = "用户列表", description = "获取所有用户列表")
+    @Operation(summary = "用户列表", description = "分页获取用户列表")
     @GetMapping("/list")
-    public Result<List<SysUser>> list() {
-        return Result.success(userService.list());
+    public Result<PageResult<UserDTO>> list(
+            @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
+            @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size) {
+        return Result.success(userService.list(page, size));
     }
 
     @Operation(summary = "获取用户详情", description = "根据ID获取用户详细信息")
     @GetMapping("/{id}")
     public Result<UserDTO> getById(
-            @Parameter(description = "用户ID") @PathVariable Long id) {
+            @Parameter(description = "用户ID") @PathVariable String id) {
         return Result.success(userService.getById(id));
     }
 
@@ -53,7 +55,7 @@ public class UserController {
     @Operation(summary = "删除用户", description = "根据ID删除用户")
     @DeleteMapping("/{id}")
     public Result<Void> delete(
-            @Parameter(description = "用户ID") @PathVariable Long id) {
+            @Parameter(description = "用户ID") @PathVariable String id) {
         userService.delete(id);
         return Result.success();
     }
@@ -61,8 +63,8 @@ public class UserController {
     @Operation(summary = "重置密码", description = "重置用户密码")
     @PutMapping("/password")
     public Result<Void> resetPassword(
-            @Parameter(description = "用户ID") @RequestParam Long id,
-            @Parameter(description = "新密码") @RequestParam String password) {
+            @Parameter(description = "用户ID") @RequestParam(value = "id") String id,
+            @Parameter(description = "新密码") @RequestParam(value = "password") String password) {
         userService.resetPassword(id, password);
         return Result.success();
     }
@@ -70,8 +72,8 @@ public class UserController {
     @Operation(summary = "分配角色", description = "给用户分配角色")
     @PutMapping("/assign-roles")
     public Result<Void> assignRoles(
-            @Parameter(description = "用户ID") @RequestParam Long userId,
-            @Parameter(description = "角色ID列表") @RequestBody List<Long> roleIds) {
+            @Parameter(description = "用户ID") @RequestParam(value = "userId") String userId,
+            @Parameter(description = "角色ID列表") @RequestBody List<String> roleIds) {
         userService.assignRoles(userId, roleIds);
         return Result.success();
     }

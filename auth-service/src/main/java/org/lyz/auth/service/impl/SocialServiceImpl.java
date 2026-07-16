@@ -9,8 +9,6 @@ import me.zhyd.oauth.model.AuthResponse;
 import me.zhyd.oauth.model.AuthUser;
 import me.zhyd.oauth.request.AuthRequest;
 import me.zhyd.oauth.request.AuthDingTalkRequest;
-import me.zhyd.oauth.request.AuthQqRequest;
-import me.zhyd.oauth.request.AuthWeChatOpenRequest;
 import me.zhyd.oauth.utils.AuthStateUtils;
 import org.lyz.auth.entity.SysSocial;
 import org.lyz.common.core.entity.SysUser;
@@ -43,55 +41,8 @@ public class SocialServiceImpl implements SocialService {
         this.sysSocialMapper = sysSocialMapper;
     }
 
-    @Value("${justauth.clients.wetchat.client-id:}")
-    private String wechatClientId;
-    @Value("${justauth.clients.wetchat.client-secret:}")
-    private String wechatClientSecret;
-    @Value("${justauth.clients.wetchat.redirect-uri:}")
-    private String wechatRedirectUri;
-
-    @Value("${justauth.clients.qq.client-id:}")
-    private String qqClientId;
-    @Value("${justauth.clients.qq.client-secret:}")
-    private String qqClientSecret;
-    @Value("${justauth.clients.qq.redirect-uri:}")
-    private String qqRedirectUri;
-
-    @Value("${justauth.clients.dingtalk.client-id:}")
-    private String dingtalkClientId;
-    @Value("${justauth.clients.dingtalk.client-secret:}")
-    private String dingtalkClientSecret;
-    @Value("${justauth.clients.dingtalk.redirect-uri:}")
-    private String dingtalkRedirectUri;
-
     @PostConstruct
     public void init() {
-        if (wechatClientId != null && !wechatClientId.isEmpty()) {
-            AuthConfig wechatConfig = AuthConfig.builder()
-                    .clientId(wechatClientId)
-                    .clientSecret(wechatClientSecret)
-                    .redirectUri(wechatRedirectUri)
-                    .build();
-            authRequestMap.put("WECHAT", new AuthWeChatOpenRequest(wechatConfig));
-        }
-
-        if (qqClientId != null && !qqClientId.isEmpty()) {
-            AuthConfig qqConfig = AuthConfig.builder()
-                    .clientId(qqClientId)
-                    .clientSecret(qqClientSecret)
-                    .redirectUri(qqRedirectUri)
-                    .build();
-            authRequestMap.put("QQ", new AuthQqRequest(qqConfig));
-        }
-
-        if (dingtalkClientId != null && !dingtalkClientId.isEmpty()) {
-            AuthConfig dingtalkConfig = AuthConfig.builder()
-                    .clientId(dingtalkClientId)
-                    .clientSecret(dingtalkClientSecret)
-                    .redirectUri(dingtalkRedirectUri)
-                    .build();
-            authRequestMap.put("DINGTALK", new AuthDingTalkRequest(dingtalkConfig));
-        }
     }
 
     @Override
@@ -111,23 +62,23 @@ public class SocialServiceImpl implements SocialService {
         String state = callback.getState();
         String key = "social:state:" + state;
         String cachedPlatform = redisTemplate.opsForValue().get(key);
-        
+
         if (cachedPlatform == null) {
             throw new BusinessException("state已过期，请重新发起授权");
         }
-        
+
         AuthRequest authRequest = authRequestMap.get(cachedPlatform.toUpperCase());
         if (authRequest == null) {
             throw new BusinessException("不支持的登录方式");
         }
 
         AuthResponse<AuthUser> response = authRequest.login(callback);
-        
+
         if (response.ok()) {
             AuthUser authUser = response.getData();
             processSocialLogin(authUser, cachedPlatform);
         }
-        
+
         redisTemplate.delete(key);
         return response;
     }
@@ -141,10 +92,10 @@ public class SocialServiceImpl implements SocialService {
         LambdaQueryWrapper<SysSocial> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysSocial::getPlatform, platform)
                .eq(SysSocial::getOpenid, authUser.getUuid())
-               .eq(SysSocial::getTenantId, Long.parseLong(tenantId));
-        
+               .eq(SysSocial::getTenantId, tenantId);
+
         SysSocial social = sysSocialMapper.selectOne(wrapper);
-        
+
         if (social != null) {
             SysUser user = sysUserMapper.selectById(social.getUserId());
             if (user != null && user.getStatus() == 1) {
@@ -155,7 +106,7 @@ public class SocialServiceImpl implements SocialService {
         }
 
         SysUser newUser = SysUser.builder()
-                .tenantId(Long.parseLong(tenantId))
+                .tenantId(tenantId)
                 .username(authUser.getUsername())
                 .nickname(authUser.getNickname())
                 .avatar(authUser.getAvatar())
@@ -165,7 +116,7 @@ public class SocialServiceImpl implements SocialService {
 
         SysSocial newSocial = SysSocial.builder()
                 .userId(newUser.getId())
-                .tenantId(Long.parseLong(tenantId))
+                .tenantId(tenantId)
                 .platform(platform.toLowerCase())
                 .openid(authUser.getUuid())
                 .nickname(authUser.getNickname())

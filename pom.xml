@@ -17,6 +17,9 @@
         <module>auth-service</module>
         <module>system-service</module>
         <module>resource-service</module>
+        <module>sms-service</module>
+        <module>emqx-auth</module>
+        <module>iot-service</module>
     </modules>
 
     <properties>
@@ -94,6 +97,13 @@
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                         <encoding>UTF-8</encoding>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
                 <plugin>

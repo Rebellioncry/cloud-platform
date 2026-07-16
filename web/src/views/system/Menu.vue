@@ -18,6 +18,7 @@
       <el-table-column prop="perms" label="权限标识" />
       <el-table-column prop="icon" label="图标" width="100" />
       <el-table-column prop="orderNum" label="排序" width="80" />
+      <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column prop="visible" label="状态" width="80">
         <template #default="{ row }">
           <el-tag :type="row.visible === 1 ? 'success' : 'danger'">

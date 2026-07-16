@@ -5,9 +5,10 @@
     </div>
     
     <el-table :data="tableData" v-loading="loading" border stripe>
-      <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column type="index" label="#" width="60" :index="(i) => (pagination.page - 1) * pagination.size + i + 1" />
       <el-table-column prop="username" label="用户名" />
       <el-table-column prop="nickname" label="昵称" />
+      <el-table-column prop="tenantName" label="所属租户" width="150" />
       <el-table-column prop="email" label="邮箱" />
       <el-table-column prop="mobile" label="手机号" />
       <el-table-column prop="status" label="状态" width="80">
@@ -18,10 +19,14 @@
         </template>
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="250" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          <template v-if="row.id !== '2'">
+            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button link type="primary" @click="handleRoles(row)">角色</el-button>
+            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          </template>
+          <el-tag v-else type="info" size="small">超级管理员</el-tag>
         </template>
       </el-table-column>
     </el-table>
@@ -38,12 +43,32 @@
     />
     
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" :disabled="!!form.id" />
         </el-form-item>
         <el-form-item label="密码" prop="password" v-if="!form.id">
           <el-input v-model="form.password" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="所属租户" prop="tenantId">
+          <el-select v-model="form.tenantId" placeholder="请选择租户" filterable style="width: 100%">
+            <el-option
+              v-for="t in tenantOptions"
+              :key="t.id"
+              :label="t.tenantName"
+              :value="t.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="角色" prop="roleIds">
+          <el-select v-model="form.roleIds" placeholder="请选择角色" multiple collapse-tags collapse-tags-tooltip style="width: 100%">
+            <el-option
+              v-for="r in roleOptions"
+              :key="r.id"
+              :label="r.roleName"
+              :value="r.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="昵称" prop="nickname">
           <el-input v-model="form.nickname" />
@@ -66,20 +91,41 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="roleDialogVisible" title="分配角色" width="500px">
+      <el-select v-model="selectedRoleIds" multiple collapse-tags collapse-tags-tooltip placeholder="请选择角色" style="width: 100%">
+        <el-option
+          v-for="r in roleOptions"
+          :key="r.id"
+          :label="r.roleName"
+          :value="r.id"
+        />
+      </el-select>
+      <template #footer>
+        <el-button @click="roleDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmitRoles">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUserList, addUser, updateUser, deleteUser } from '@/api/system'
+import { getUserList, addUser, updateUser, deleteUser, assignRoles, getRoleList, getTenantList } from '@/api/system'
 
 const loading = ref(false)
 const tableData = ref([])
 const dialogVisible = ref(false)
+const roleDialogVisible = ref(false)
 const formRef = ref()
 const isEdit = computed(() => !!form.id)
 const dialogTitle = computed(() => isEdit.value ? '编辑用户' : '新增用户')
+
+const tenantOptions = ref([])
+const roleOptions = ref([])
+const selectedRoleIds = ref([])
+let currentUserId = ''
 
 const pagination = reactive({
   page: 1,
@@ -94,13 +140,34 @@ const form = reactive({
   nickname: '',
   email: '',
   mobile: '',
-  status: 1
+  status: 1,
+  tenantId: '',
+  roleIds: []
 })
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  tenantId: [{ required: true, message: '请选择租户', trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+}
+
+const loadTenantOptions = async () => {
+  try {
+    const res = await getTenantList({ page: 1, size: 999 })
+    tenantOptions.value = res.data?.records || res.data || []
+  } catch (e) {
+    console.error('加载租户列表失败:', e)
+  }
+}
+
+const loadRoleOptions = async () => {
+  try {
+    const res = await getRoleList({ page: 1, size: 999 })
+    roleOptions.value = res.data?.records || res.data || []
+  } catch (e) {
+    console.error('加载角色列表失败:', e)
+  }
 }
 
 const loadData = async () => {
@@ -127,7 +194,9 @@ const handleAdd = () => {
     nickname: '',
     email: '',
     mobile: '',
-    status: 1
+    status: 1,
+    tenantId: '',
+    roleIds: []
   })
   dialogVisible.value = true
 }
@@ -135,6 +204,23 @@ const handleAdd = () => {
 const handleEdit = (row) => {
   Object.assign(form, { ...row, password: '' })
   dialogVisible.value = true
+}
+
+const handleRoles = (row) => {
+  currentUserId = row.id
+  selectedRoleIds.value = row.roleIds ? [...row.roleIds] : []
+  roleDialogVisible.value = true
+}
+
+const handleSubmitRoles = async () => {
+  try {
+    await assignRoles(currentUserId, selectedRoleIds.value)
+    ElMessage.success('角色分配成功')
+    roleDialogVisible.value = false
+    loadData()
+  } catch (error) {
+    console.error('分配角色失败:', error)
+  }
 }
 
 const handleDelete = async (row) => {
@@ -169,6 +255,8 @@ const handleSubmit = async () => {
   }
 }
 
+loadTenantOptions()
+loadRoleOptions()
 loadData()
 </script>
 

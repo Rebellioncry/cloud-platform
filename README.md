@@ -1,38 +1,53 @@
 # Cloud Platform 微服务平台
 
-## 项目简介
-
-基于 Spring Cloud + Nacos 的微服务架构平台，支持多租户、SSO单点登录、第三方登录（微信、QQ、钉钉）。
+基于 Spring Cloud + Nacos 的微服务架构平台，支持多租户、IoT 设备管理、MQTT 通信、审计日志、第三方登录（微信、QQ、钉钉）。
 
 ## 技术栈
 
 | 组件 | 版本 | 说明 |
 |------|------|------|
-| Java | 21 | LTS 版本 |
-| Maven | 3.9.9 | 构建工具 |
+| Java | 21 | LTS |
 | Spring Boot | 3.5.12 | 核心框架 |
-| Spring Cloud | 2025.0.3 | 微服务框架 |
-| Spring Cloud Alibaba | 2025.0.0.0 | 阿里组件 |
-| Nacos | 3.0.3 | 服务发现/配置中心 |
-| MySQL | 8.0 | 主数据库 |
-| Redis | 7.x | 缓存/会话 |
-| MongoDB | 6.x | 日志存储 |
-| Sa-Token | 1.45.0 | 认证授权 |
-| JustAuth | 1.16.7 | 第三方登录 |
+| Spring Cloud | 2025.0.1 | 微服务框架 |
+| Spring Cloud Alibaba | 2025.0.0.0 | Nacos 集成 |
+| Nacos | 3.1.1 | 服务发现 / 配置中心 |
+| Sa-Token | 1.45.0 | 认证授权 (JWT + Redis) |
 | MyBatis-Plus | 3.5.16 | ORM |
+| Knife4j | 4.3.0 | API 文档 |
+| MySQL | 8.0 | 关系数据库 |
+| TDengine | 3.4.1 | 时序数据库 (IoT) |
+| Redis | 7.x | 缓存 / 会话 |
+| MongoDB | 6.x | 审计日志存储 |
+| EMQX | 5.8.6 | MQTT Broker |
+| Vue 3 | - | 前端 (Composition API + Element Plus) |
 
 ## 模块结构
 
 ```
 cloud-platform/
-├── common/              # 公共模块
-├── gateway/             # 网关服务 (8080)
+├── common/              # 公共模块 (实体、工具、配置)
+├── gateway/             # API 网关 (8080)
 ├── auth-service/        # 认证服务 (8081)
-├── system-service/      # 系统服务 (8082)
+├── system-service/      # 系统管理 (8082)
 ├── resource-service/    # 资源服务 (8083)
+├── sms-service/         # 短信服务 (8084)
+├── iot-service/         # IoT 服务 (8090)
+├── emqx-auth/           # EMQX HTTP 认证 (8085)
+├── web/                 # 前端 (Vue 3)
 ├── nacos-config/        # Nacos 配置文件
-└── docker/              # Docker 配置
+└── docker/              # Docker Compose + 初始化脚本
 ```
+
+## 中间件 (Docker Compose)
+
+| 服务 | 容器名 | 端口 | 说明 |
+|------|--------|------|------|
+| MySQL | cloud-mysql | 3306 | 主数据库 |
+| Redis | cloud-redis | 6379 | 缓存/会话 |
+| MongoDB | cloud-mongo | 27017 | 审计日志 |
+| Nacos | cloud-nacos | 8848 | 注册/配置中心 |
+| EMQX | cloud-emqx | 1883/18083 | MQTT Broker |
+| TDengine | cloud-tdengine | 6030/6041 | 时序数据库 |
 
 ## 快速开始
 
@@ -40,96 +55,101 @@ cloud-platform/
 
 - JDK 21+
 - Maven 3.9+
-- Docker & Docker Compose
+- Podman / Docker + Compose
 
 ### 2. 启动中间件
 
 ```bash
 cd docker
-docker-compose up -d
+podman-compose up -d
 ```
 
-### 3. 编译项目
+### 3. 推送 Nacos 配置
+
+```bash
+# Windows PowerShell
+.\push-config.ps1
+
+# Linux/Mac
+bash push-config.sh
+```
+
+配置文件位于 `nacos-config/` 目录。
+
+### 4. 编译项目
 
 ```bash
 mvn clean install -DskipTests
 ```
 
-### 4. 启动服务
+### 5. 启动服务 (按顺序)
 
-按顺序启动：
-1. gateway
-2. auth-service
-3. system-service
-4. resource-service
+1. **gateway** — API 网关
+2. **auth-service** — 认证服务
+3. **system-service** — 系统管理
+4. **iot-service** — IoT 服务
+5. **emqx-auth** — EMQX 认证服务
 
-### 5. 访问服务
+### 6. 访问
 
-- 网关地址: http://localhost:8080
-- Nacos 控制台: http://localhost:8848/nacos (nacos/nacos)
+| 地址 | 说明 |
+|------|------|
+| http://localhost:8080 | 前端 / API 网关 |
+| http://localhost:8848/nacos | Nacos 控制台 (nacos/nacos) |
+| http://localhost:18083 | EMQX Dashboard (admin/public) |
+| http://localhost:8080/doc.html | Knife4j API 文档 |
 
-## 默认账号
+### 默认账号
 
-- 用户名: admin
-- 密码: 123456
+- 用户名: `admin`
+- 密码: `123456`
+- 角色: SUPER_ADMIN (超级管理员，不限租户)
 
-## API 接口
+## 功能模块
 
-### 认证接口
+### 系统管理
+- 用户管理 — CRUD、角色分配、租户绑定
+- 角色管理 — CRUD、菜单权限分配
+- 菜单管理 — 树形结构、权限标识
+- 租户管理 — 多租户隔离
+- 审计日志 — 操作记录 (MongoDB)
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | /auth/login | 用户登录 |
-| POST | /auth/logout | 登出 |
-| GET | /auth/userinfo | 获取用户信息 |
+### IoT 平台
+- 产品管理 — 产品定义、物模型 (Thing Model)
+- 设备管理 — 设备注册、状态管理、在线/离线
+- 设备详情 — 影子状态、功能调用、下发指令
+- MQTT 配置 — EMQX 连接管理
+- IoT 看板 — 设备统计概览
 
-### 系统管理接口
+### 认证授权
+- 账号密码登录
+- 验证码登录 (短信/邮箱)
+- 第三方登录 (微信/QQ/钉钉，需配置 JustAuth)
+- Sa-Token JWT + Redis 会话
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | /system/tenant/list | 租户列表 |
-| POST | /system/tenant | 新增租户 |
-| PUT | /system/tenant | 修改租户 |
-| DELETE | /system/tenant/{id} | 删除租户 |
-| GET | /system/user/list | 用户列表 |
-| POST | /system/user | 新增用户 |
-| PUT | /system/user | 修改用户 |
-| DELETE | /system/user/{id} | 删除用户 |
-| GET | /system/role/list | 角色列表 |
-| POST | /system/role | 新增角色 |
-| PUT | /system/role | 修改角色 |
-| DELETE | /system/role/{id} | 删除角色 |
-| GET | /system/menu/list | 菜单列表 |
-| GET | /system/menu/tree | 菜单树 |
-| POST | /system/menu | 新增菜单 |
-| PUT | /system/menu | 修改菜单 |
-| DELETE | /system/menu/{id} | 删除菜单 |
+## IoT 架构
 
-## 第三方登录配置
-
-在 Nacos 配置中心或环境变量中配置：
-
-```yaml
-justauth:
-  clients:
-    WECHAT:
-      client-id: your-app-id
-      client-secret: your-app-secret
-      redirect-uri: http://localhost:8080/auth/social/wetchat/callback
-    QQ:
-      client-id: your-app-id
-      client-secret: your-app-secret
-      redirect-uri: http://localhost:8080/auth/social/qq/callback
-    DINGTALK:
-      client-id: your-app-id
-      client-secret: your-app-secret
-      redirect-uri: http://localhost:8080/auth/social/dingtalk/callback
 ```
+设备 → EMQX (MQTT) → IoT Service (指令下发)
+                    → TDengine (时序数据存储)
+                    → MySQL (设备/产品元数据)
+```
+
+- MQTT Topic: `sys/{productKey}/{deviceName}/thing/...`
+- 设备认证: EMQX HTTP Auth → emqx-auth 服务 → MySQL 校验 device_key
+- 设备 clientId: `{clientIdPrefix}-{UUID}`
 
 ## 数据库
 
-数据库初始化脚本位于 `docker/init.sql`
+- 初始化脚本: `docker/init.sql`
+- TDengine 初始化: `docker/tdengine-init.sh`
+- 多租户通过 `tenant_id` 字段隔离
+- 超级管理员 (admin) 跳过租户过滤
 
-## License
+## 项目约定
 
-MIT
+- 所有 `@RequestParam` / `@PathVariable` 必须显式指定 `value` 属性
+- 所有 ID 为 String (UUID)，外键字段也是 String
+- Lombok 注解处理器配置在父 POM 的 `annotationProcessorPaths`
+- 前端使用 Vue 3 Composition API + `<script setup>` 语法
+- 菜单从数据库动态加载，前端不硬编码路由

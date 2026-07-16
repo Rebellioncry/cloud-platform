@@ -5,6 +5,9 @@ spring:
     import: optional:nacos:system-service.yaml?server-addr=${NACOS_SERVER_ADDR:172.26.76.190:8848}&group=DEFAULT_GROUP, optional:nacos:common.yaml?server-addr=${NACOS_SERVER_ADDR:172.26.76.190:8848}&group=DEFAULT_GROUP&refreshEnabled=true
   cloud:
     nacos:
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:172.26.76.190:8848}
+        group: DEFAULT_GROUP
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:172.26.76.190:8848}
         namespace: ${NACOS_NAMESPACE:}

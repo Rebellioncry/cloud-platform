@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Schema(description = "租户DTO")
 public class TenantDTO {
     @Schema(description = "主键ID")
-    private Long id;
+    private String id;
     
     @NotBlank(message = "租户编码不能为空")
     @Schema(description = "租户编码", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -31,4 +31,6 @@ public class TenantDTO {
     private LocalDateTime expireTime;
     @Schema(description = "备注")
     private String remark;
+    @Schema(description = "创建时间")
+    private LocalDateTime createTime;
 }

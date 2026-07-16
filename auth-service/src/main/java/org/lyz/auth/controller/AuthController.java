@@ -1,9 +1,10 @@
 package org.lyz.auth.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.lyz.auth.dto.CodeLoginRequest;
+import org.lyz.auth.dto.CodeRequest;
 import org.lyz.auth.dto.LoginRequest;
 import org.lyz.auth.dto.LoginResponse;
 import org.lyz.auth.dto.UserInfo;
@@ -25,6 +26,19 @@ public class AuthController {
     @PostMapping("/login")
     public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return Result.success(loginService.login(request));
+    }
+
+    @Operation(summary = "发送验证码", description = "发送短信或邮箱验证码")
+    @PostMapping("/code/send")
+    public Result<Void> sendCode(@Valid @RequestBody CodeRequest request) {
+        loginService.sendCode(request);
+        return Result.success();
+    }
+
+    @Operation(summary = "验证码登录", description = "使用手机号或邮箱验证码登录")
+    @PostMapping("/code/login")
+    public Result<LoginResponse> codeLogin(@Valid @RequestBody CodeLoginRequest request) {
+        return Result.success(loginService.codeLogin(request));
     }
 
     @Operation(summary = "用户登出", description = "退出当前登录状态")
