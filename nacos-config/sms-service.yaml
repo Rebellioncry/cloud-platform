@@ -29,9 +29,3 @@ aliyun:
     access-key-secret: ${ALIYUN_ACCESS_KEY_SECRET:}
     sign-name: ${ALIYUN_SMS_SIGN_NAME:}
     template-code: ${ALIYUN_SMS_TEMPLATE_CODE:}
-
-knife4j:
-  enable: true
-  setting:
-    language: zh_cn
-  cors: true

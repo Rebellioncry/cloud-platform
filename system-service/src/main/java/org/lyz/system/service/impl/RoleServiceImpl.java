@@ -4,8 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
-import org.lyz.common.core.context.SecurityUtils;
-import org.lyz.common.core.context.TenantContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.system.dto.RoleDTO;
 import org.lyz.system.entity.SysRole;
@@ -31,12 +29,6 @@ public class RoleServiceImpl implements RoleService {
     public PageResult<SysRole> list(int page, int size) {
         Page<SysRole> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SysRole> wrapper = new LambdaQueryWrapper<>();
-        if (!SecurityUtils.isSuperAdmin()) {
-            String tenantId = TenantContext.getTenantId();
-            if (tenantId != null) {
-                wrapper.eq(SysRole::getTenantId, tenantId);
-            }
-        }
         IPage<SysRole> result = roleMapper.selectPage(pageParam, wrapper);
         return PageResult.of(result.getTotal(), page, size, result.getRecords());
     }
@@ -46,10 +38,6 @@ public class RoleServiceImpl implements RoleService {
         SysRole role = roleMapper.selectById(id);
         if (role == null) {
             throw new BusinessException("角色不存在");
-        }
-        String tenantId = TenantContext.getTenantId();
-        if (tenantId != null && !tenantId.equals(role.getTenantId())) {
-            throw new BusinessException("无权访问该角色");
         }
         RoleDTO dto = toDTO(role);
         LambdaQueryWrapper<SysRoleMenu> menuWrapper = new LambdaQueryWrapper<>();
@@ -61,20 +49,13 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public void create(RoleDTO dto) {
-        String tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            tenantId = "1";
-        }
-
         LambdaQueryWrapper<SysRole> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysRole::getRoleCode, dto.getRoleCode())
-               .eq(SysRole::getTenantId, tenantId);
+        wrapper.eq(SysRole::getRoleCode, dto.getRoleCode());
         if (roleMapper.selectCount(wrapper) > 0) {
             throw new BusinessException("角色编码已存在");
         }
 
         SysRole role = toEntity(dto);
-        role.setTenantId(tenantId);
         roleMapper.insert(role);
 
         if (dto.getMenuIds() != null && !dto.getMenuIds().isEmpty()) {

@@ -4,8 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
-import org.lyz.common.core.context.SecurityUtils;
-import org.lyz.common.core.context.TenantContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.common.core.result.PageResult;
 import org.lyz.iot.dto.DeviceDTO;
@@ -27,17 +25,10 @@ public class DeviceServiceImpl implements DeviceService {
     private final IotDeviceMapper deviceMapper;
     private final IotProductMapper productMapper;
 
-    private String getTenantId() {
-        if (SecurityUtils.isSuperAdmin()) return null;
-        String tid = TenantContext.getTenantId();
-        return tid != null ? tid : "0";
-    }
-
     @Override
     public PageResult<IotDevice> list(int page, int size, String productId, String name, Integer status) {
         Page<IotDevice> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<IotDevice> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(IotDevice::getTenantId, getTenantId());
         if (productId != null) {
             wrapper.eq(IotDevice::getProductId, productId);
         }
@@ -58,10 +49,6 @@ public class DeviceServiceImpl implements DeviceService {
         if (device == null) {
             throw new BusinessException("设备不存在");
         }
-        String tenantId = getTenantId();
-        if (tenantId != null && !tenantId.equals(device.getTenantId())) {
-            throw new BusinessException("无权访问该设备");
-        }
         return device;
     }
 
@@ -73,7 +60,6 @@ public class DeviceServiceImpl implements DeviceService {
             throw new BusinessException("产品不存在");
         }
         IotDevice device = new IotDevice();
-        device.setTenantId(getTenantId());
         device.setProductId(dto.getProductId());
         device.setProductKey(product.getProductKey());
         device.setDeviceName(dto.getDeviceName());

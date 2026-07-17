@@ -4,8 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.lyz.common.core.context.SecurityUtils;
-import org.lyz.common.core.context.TenantContext;
 import org.lyz.common.core.result.Result;
 import org.lyz.iot.dto.IotDashboardDTO;
 import org.lyz.iot.entity.IotDevice;
@@ -33,18 +31,15 @@ public class IotDashboardController {
     @Operation(summary = "看板概览数据")
     @GetMapping("/overview")
     public Result<IotDashboardDTO> overview() {
-        String tenantId = SecurityUtils.isSuperAdmin() ? null : TenantContext.getTenantId();
         IotDashboardDTO dto = new IotDashboardDTO();
 
         dto.setProductCount(productMapper.selectCount(
                 new LambdaQueryWrapper<IotProduct>()
-                        .eq(IotProduct::getDeleted, 0)
-                        .eq(tenantId != null, IotProduct::getTenantId, tenantId)));
+                        .eq(IotProduct::getDeleted, 0)));
 
         List<IotDevice> devices = deviceMapper.selectList(
                 new LambdaQueryWrapper<IotDevice>()
-                        .eq(IotDevice::getDeleted, 0)
-                        .eq(tenantId != null, IotDevice::getTenantId, tenantId));
+                        .eq(IotDevice::getDeleted, 0));
 
         dto.setDeviceCount((long) devices.size());
         dto.setOnlineCount(devices.stream().filter(d -> d.getStatus() != null && d.getStatus() == 1).count());

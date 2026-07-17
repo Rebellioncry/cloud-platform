@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.lyz.common.core.context.SecurityUtils;
-import org.lyz.common.core.context.TenantContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.iot.dto.DeviceFunctionDTO;
 import org.lyz.iot.entity.IotDevice;
@@ -39,12 +37,6 @@ public class DeviceFunctionServiceImpl implements DeviceFunctionService {
         IotDevice device = deviceMapper.selectById(deviceId);
         if (device == null) {
             throw new BusinessException("设备不存在");
-        }
-        if (!SecurityUtils.isSuperAdmin()) {
-            String tenantId = TenantContext.getTenantId();
-            if (tenantId != null && !tenantId.equals(device.getTenantId())) {
-                throw new BusinessException("无权访问该设备");
-            }
         }
         IotProduct product = productMapper.selectById(device.getProductId());
         List<DeviceFunctionDTO> functions = new ArrayList<>();
@@ -109,14 +101,7 @@ public class DeviceFunctionServiceImpl implements DeviceFunctionService {
         if (device == null) {
             throw new BusinessException("设备不存在");
         }
-        if (!SecurityUtils.isSuperAdmin()) {
-            String tenantId = TenantContext.getTenantId();
-            if (tenantId != null && !tenantId.equals(device.getTenantId())) {
-                throw new BusinessException("无权访问该设备");
-            }
-        }
         IotDeviceCommand command = new IotDeviceCommand();
-        command.setTenantId(TenantContext.getTenantId());
         command.setDeviceId(deviceId);
         command.setCommandType("function_invoke");
         command.setIdentifier(identifier);

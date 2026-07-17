@@ -4,8 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
-import org.lyz.common.core.context.SecurityUtils;
-import org.lyz.common.core.context.TenantContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.common.core.result.PageResult;
 import org.lyz.iot.dto.ProductDTO;
@@ -29,17 +27,10 @@ public class ProductServiceImpl implements ProductService {
     private final IotProductMapper productMapper;
     private final IotDeviceMapper deviceMapper;
 
-    private String getTenantId() {
-        if (SecurityUtils.isSuperAdmin()) return null;
-        String tid = TenantContext.getTenantId();
-        return tid != null ? tid : "0";
-    }
-
     @Override
     public PageResult<IotProduct> list(int page, int size, String name) {
         Page<IotProduct> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<IotProduct> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(IotProduct::getTenantId, getTenantId());
         if (name != null && !name.isEmpty()) {
             wrapper.like(IotProduct::getName, name);
         }
@@ -54,10 +45,6 @@ public class ProductServiceImpl implements ProductService {
         if (product == null) {
             throw new BusinessException("产品不存在");
         }
-        String tenantId = getTenantId();
-        if (tenantId != null && !tenantId.equals(product.getTenantId())) {
-            throw new BusinessException("无权访问该产品");
-        }
         return product;
     }
 
@@ -65,7 +52,6 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public IotProduct create(ProductDTO dto) {
         IotProduct product = new IotProduct();
-        product.setTenantId(getTenantId());
         product.setParentId(dto.getParentId());
         product.setProductKey(dto.getProductKey() != null && !dto.getProductKey().isEmpty()
                 ? dto.getProductKey() : generateProductKey());
@@ -109,7 +95,6 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductTreeDTO> getTree() {
         LambdaQueryWrapper<IotProduct> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(IotProduct::getTenantId, getTenantId());
         wrapper.orderByAsc(IotProduct::getCreateTime);
         List<IotProduct> products = productMapper.selectList(wrapper);
         return buildTree(products, null);

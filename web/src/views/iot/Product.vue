@@ -97,8 +97,8 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="thingModelVisible" title="物模型编辑" width="800px" top="5vh">
-      <el-input v-model="thingModelJson" type="textarea" :rows="25" placeholder="请输入物模型JSON（阿里云IoT TSL格式）" />
+    <el-dialog v-model="thingModelVisible" title="物模型编辑" width="900px" top="3vh" destroy-on-close>
+      <ThingModelEditor v-model="thingModelJson" />
       <template #footer>
         <el-button @click="thingModelVisible = false">关闭</el-button>
         <el-button type="primary" @click="handleSaveThingModel">保存</el-button>
@@ -111,6 +111,7 @@
 import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getProductList, addProduct, updateProduct, deleteProduct, getThingModel, updateThingModel, publishThingModel } from '@/api/iot'
+import ThingModelEditor from './ThingModelEditor.vue'
 
 const loading = ref(false)
 const tableData = ref([])

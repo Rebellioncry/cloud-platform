@@ -72,4 +72,162 @@ public class PropertyPostHandler {
             log.error("属性上报处理失败", e);
         }
     }
+
+    public void handleHistoryPost(String topic, JsonNode root) {
+        try {
+            String productKey = MqttTopicUtils.extractProductKey(topic);
+            String deviceName = MqttTopicUtils.extractDeviceName(topic);
+
+            IotDevice device = deviceMapper.selectOne(
+                    new LambdaQueryWrapper<IotDevice>()
+                            .eq(IotDevice::getProductKey, productKey)
+                            .eq(IotDevice::getDeviceName, deviceName));
+            if (device == null) {
+                log.warn("历史属性上报: 未找到设备. productKey={}, deviceName={}", productKey, deviceName);
+                return;
+            }
+
+            JsonNode params = root.get("params");
+            if (params == null || !params.isObject()) return;
+
+            params.fields().forEachRemaining(entry -> {
+                String identifier = entry.getKey();
+                JsonNode valueNode = entry.getValue();
+                String value = valueNode.isObject() ? valueNode.toString() : valueNode.asText();
+
+                IotDeviceTelemetry telemetry = new IotDeviceTelemetry();
+                telemetry.setTs(LocalDateTime.now());
+                telemetry.setValue(value);
+                telemetry.setValueType(valueNode.isObject() ? "object" : valueNode.getNodeType().name().toLowerCase());
+                telemetry.setQuality("HISTORY");
+                telemetry.setDeviceId(device.getId());
+                telemetry.setProductKey(productKey);
+                telemetry.setPropertyId(identifier);
+                telemetry.setDeviceName(deviceName);
+                telemetryMapper.insert(telemetry);
+
+                shadowService.updateReported(device.getId(), identifier, value);
+            });
+
+            log.info("历史属性上报处理完成: device={}, properties={}", device.getDeviceName(), params);
+        } catch (Exception e) {
+            log.error("历史属性上报处理失败", e);
+        }
+    }
+
+    public void handleBatchPost(String topic, JsonNode root) {
+        try {
+            String productKey = MqttTopicUtils.extractProductKey(topic);
+            String deviceName = MqttTopicUtils.extractDeviceName(topic);
+
+            IotDevice device = deviceMapper.selectOne(
+                    new LambdaQueryWrapper<IotDevice>()
+                            .eq(IotDevice::getProductKey, productKey)
+                            .eq(IotDevice::getDeviceName, deviceName));
+            if (device == null) {
+                log.warn("批量属性上报: 未找到设备. productKey={}, deviceName={}", productKey, deviceName);
+                return;
+            }
+
+            JsonNode params = root.get("params");
+            if (params == null || !params.isObject()) return;
+
+            params.fields().forEachRemaining(entry -> {
+                String identifier = entry.getKey();
+                JsonNode valueNode = entry.getValue();
+                String value = valueNode.isObject() ? valueNode.toString() : valueNode.asText();
+
+                IotDeviceTelemetry telemetry = new IotDeviceTelemetry();
+                telemetry.setTs(LocalDateTime.now());
+                telemetry.setValue(value);
+                telemetry.setValueType(valueNode.isObject() ? "object" : valueNode.getNodeType().name().toLowerCase());
+                telemetry.setQuality("BATCH");
+                telemetry.setDeviceId(device.getId());
+                telemetry.setProductKey(productKey);
+                telemetry.setPropertyId(identifier);
+                telemetry.setDeviceName(deviceName);
+                telemetryMapper.insert(telemetry);
+
+                shadowService.updateReported(device.getId(), identifier, value);
+            });
+
+            log.info("批量属性上报处理完成: device={}, properties={}", device.getDeviceName(), params);
+        } catch (Exception e) {
+            log.error("批量属性上报处理失败", e);
+        }
+    }
+
+    public void handlePackPost(String topic, JsonNode root) {
+        try {
+            String productKey = MqttTopicUtils.extractProductKey(topic);
+            String deviceName = MqttTopicUtils.extractDeviceName(topic);
+
+            IotDevice device = deviceMapper.selectOne(
+                    new LambdaQueryWrapper<IotDevice>()
+                            .eq(IotDevice::getProductKey, productKey)
+                            .eq(IotDevice::getDeviceName, deviceName));
+            if (device == null) {
+                log.warn("网关批量上报: 未找到设备. productKey={}, deviceName={}", productKey, deviceName);
+                return;
+            }
+
+            JsonNode params = root.get("params");
+            if (params == null) return;
+
+            JsonNode subDevices = params.get("subDevices");
+            if (subDevices != null && subDevices.isArray()) {
+                for (JsonNode sub : subDevices) {
+                    String subProductKey = sub.has("productKey") ? sub.get("productKey").asText() : productKey;
+                    String subDeviceName = sub.has("deviceName") ? sub.get("deviceName").asText() : null;
+
+                    JsonNode properties = sub.get("properties");
+                    if (properties != null && properties.isObject()) {
+                        properties.fields().forEachRemaining(entry -> {
+                            String identifier = entry.getKey();
+                            JsonNode valueNode = entry.getValue();
+                            String value = valueNode.isObject() ? valueNode.toString() : valueNode.asText();
+
+                            IotDeviceTelemetry telemetry = new IotDeviceTelemetry();
+                            telemetry.setTs(LocalDateTime.now());
+                            telemetry.setValue(value);
+                            telemetry.setValueType(valueNode.isObject() ? "object" : valueNode.getNodeType().name().toLowerCase());
+                            telemetry.setQuality("PACK");
+                            telemetry.setDeviceId(device.getId());
+                            telemetry.setProductKey(subProductKey);
+                            telemetry.setPropertyId(identifier);
+                            telemetry.setDeviceName(subDeviceName);
+                            telemetryMapper.insert(telemetry);
+                        });
+                    }
+                }
+            }
+
+            JsonNode properties = params.get("properties");
+            if (properties != null && properties.isObject()) {
+                properties.fields().forEachRemaining(entry -> {
+                    String identifier = entry.getKey();
+                    JsonNode valueNode = entry.getValue();
+                    String value = valueNode.isObject() ? valueNode.toString() : valueNode.asText();
+
+                    IotDeviceTelemetry telemetry = new IotDeviceTelemetry();
+                    telemetry.setTs(LocalDateTime.now());
+                    telemetry.setValue(value);
+                    telemetry.setValueType(valueNode.isObject() ? "object" : valueNode.getNodeType().name().toLowerCase());
+                    telemetry.setQuality("PACK");
+                    telemetry.setDeviceId(device.getId());
+                    telemetry.setProductKey(productKey);
+                    telemetry.setPropertyId(identifier);
+                    telemetry.setDeviceName(deviceName);
+                    telemetryMapper.insert(telemetry);
+
+                    shadowService.updateReported(device.getId(), identifier, value);
+                });
+            }
+
+            log.info("网关批量上报处理完成: device={}, subDevices={}", deviceName,
+                    subDevices != null ? subDevices.size() : 0);
+        } catch (Exception e) {
+            log.error("网关批量上报处理失败", e);
+        }
+    }
 }

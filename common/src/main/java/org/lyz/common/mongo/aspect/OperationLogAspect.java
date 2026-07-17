@@ -9,6 +9,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.lyz.common.core.context.UserContext;
 import org.lyz.common.mongo.entity.OperationLog;
 import org.lyz.common.mongo.service.OperationLogService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -52,15 +53,9 @@ public class OperationLogAspect {
 
             try {
                 if (StpUtil.isLogin()) {
-                    opLog.setUserId(StpUtil.getLoginIdAsString());
-                    Object username = StpUtil.getSession().get("username");
-                    if (username != null) {
-                        opLog.setUsername(username.toString());
-                    }
-                    Object tenantId = StpUtil.getSession().get("tenantId");
-                    if (tenantId != null) {
-                        opLog.setTenantId(tenantId.toString());
-                    }
+                    opLog.setUserId(UserContext.getUserId());
+                    opLog.setUsername(UserContext.getUsername());
+                    opLog.setTenantId(UserContext.getTenantId());
                 }
             } catch (Exception ignored) {
             }
@@ -113,6 +108,7 @@ public class OperationLogAspect {
         if (className.toLowerCase().contains("auth")) return "认证";
         if (className.toLowerCase().contains("dashboard")) return "看板";
         if (className.toLowerCase().contains("emqx")) return "EMQX";
+        if (className.toLowerCase().contains("audit")) return "审计日志";
         return className;
     }
 

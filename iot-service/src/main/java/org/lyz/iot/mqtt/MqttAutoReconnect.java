@@ -3,6 +3,7 @@ package org.lyz.iot.mqtt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.lyz.common.config.TenantIgnore;
 import org.lyz.iot.entity.IotMqttConfig;
 import org.lyz.iot.mapper.mysql.IotMqttConfigMapper;
 import org.springframework.boot.ApplicationArguments;
@@ -14,6 +15,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@TenantIgnore
 public class MqttAutoReconnect implements ApplicationRunner {
 
     private final IotMqttConfigMapper mqttConfigMapper;

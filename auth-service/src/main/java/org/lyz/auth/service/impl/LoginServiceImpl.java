@@ -230,6 +230,17 @@ public class LoginServiceImpl implements LoginService {
             StpUtil.getSession().set("userId", userId);
             StpUtil.getSession().set("username", user.getUsername());
             StpUtil.getSession().set("tenantId", user.getTenantId());
+            SysUser safeUser = new SysUser();
+            safeUser.setId(user.getId());
+            safeUser.setTenantId(user.getTenantId());
+            safeUser.setUsername(user.getUsername());
+            safeUser.setNickname(user.getNickname());
+            safeUser.setEmail(user.getEmail());
+            safeUser.setMobile(user.getMobile());
+            safeUser.setAvatar(user.getAvatar());
+            safeUser.setStatus(user.getStatus());
+            safeUser.setCreateTime(user.getCreateTime());
+            StpUtil.getSession().set("user", safeUser);
         }
     }
 

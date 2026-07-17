@@ -3,8 +3,6 @@ package org.lyz.iot.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.lyz.common.core.context.SecurityUtils;
-import org.lyz.common.core.context.TenantContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.iot.dto.DeviceShadowDTO;
 import org.lyz.iot.entity.IotDeviceShadow;
@@ -31,12 +29,6 @@ public class DeviceShadowServiceImpl implements DeviceShadowService {
     public List<DeviceShadowDTO> getShadow(String deviceId) {
         LambdaQueryWrapper<IotDeviceShadow> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(IotDeviceShadow::getDeviceId, deviceId);
-        if (!SecurityUtils.isSuperAdmin()) {
-            String tenantId = TenantContext.getTenantId();
-            if (tenantId != null) {
-                wrapper.eq(IotDeviceShadow::getTenantId, tenantId);
-            }
-        }
         List<IotDeviceShadow> shadows = shadowMapper.selectList(wrapper);
         return shadows.stream().map(this::toDTO).collect(Collectors.toList());
     }
@@ -85,12 +77,6 @@ public class DeviceShadowServiceImpl implements DeviceShadowService {
     public List<DeviceShadowDTO> getDiff(String deviceId) {
         LambdaQueryWrapper<IotDeviceShadow> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(IotDeviceShadow::getDeviceId, deviceId);
-        if (!SecurityUtils.isSuperAdmin()) {
-            String tenantId = TenantContext.getTenantId();
-            if (tenantId != null) {
-                wrapper.eq(IotDeviceShadow::getTenantId, tenantId);
-            }
-        }
         List<IotDeviceShadow> shadows = shadowMapper.selectList(wrapper);
         return shadows.stream()
                 .filter(s -> {
@@ -108,7 +94,6 @@ public class DeviceShadowServiceImpl implements DeviceShadowService {
         IotDeviceShadow shadow = shadowMapper.selectOne(wrapper);
         if (shadow == null) {
             shadow = new IotDeviceShadow();
-            shadow.setTenantId(TenantContext.getTenantId());
             shadow.setDeviceId(deviceId);
             shadow.setPropertyIdentifier(identifier);
             shadow.setDesiredVersion(0L);

@@ -4,8 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
-import org.lyz.common.core.context.SecurityUtils;
-import org.lyz.common.core.context.TenantContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.system.dto.MenuDTO;
 import org.lyz.system.entity.SysMenu;
@@ -27,12 +25,6 @@ public class MenuServiceImpl implements MenuService {
     public PageResult<SysMenu> list(int page, int size) {
         Page<SysMenu> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
-        if (!SecurityUtils.isSuperAdmin()) {
-            String tenantId = TenantContext.getTenantId();
-            if (tenantId != null) {
-                wrapper.eq(SysMenu::getTenantId, tenantId);
-            }
-        }
         wrapper.orderByAsc(SysMenu::getOrderNum);
         IPage<SysMenu> result = menuMapper.selectPage(pageParam, wrapper);
         return PageResult.of(result.getTotal(), page, size, result.getRecords());
@@ -46,12 +38,6 @@ public class MenuServiceImpl implements MenuService {
 
     private List<SysMenu> listAll() {
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
-        if (!SecurityUtils.isSuperAdmin()) {
-            String tenantId = TenantContext.getTenantId();
-            if (tenantId != null) {
-                wrapper.eq(SysMenu::getTenantId, tenantId);
-            }
-        }
         wrapper.orderByAsc(SysMenu::getOrderNum);
         return menuMapper.selectList(wrapper);
     }
@@ -62,22 +48,12 @@ public class MenuServiceImpl implements MenuService {
         if (menu == null) {
             throw new BusinessException("菜单不存在");
         }
-        String tenantId = TenantContext.getTenantId();
-        if (tenantId != null && !tenantId.equals(menu.getTenantId())) {
-            throw new BusinessException("无权访问该菜单");
-        }
         return toDTO(menu);
     }
 
     @Override
     public void create(MenuDTO dto) {
-        String tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            tenantId = "1";
-        }
-
         SysMenu menu = toEntity(dto);
-        menu.setTenantId(tenantId);
         menuMapper.insert(menu);
     }
 

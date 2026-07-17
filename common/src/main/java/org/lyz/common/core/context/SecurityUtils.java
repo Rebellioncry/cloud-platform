@@ -1,27 +1,27 @@
 package org.lyz.common.core.context;
 
-import cn.dev33.satoken.stp.StpUtil;
-
 import java.util.List;
 
+/**
+ * @deprecated 请使用 {@link UserContext}，功能更全且支持缓存 CRUD。
+ */
+@Deprecated
 public class SecurityUtils {
 
     public static boolean isSuperAdmin() {
-        List<String> roleCodes = getRoleCodes();
-        return roleCodes != null && roleCodes.contains("SUPER_ADMIN");
+        return UserContext.isSuperAdmin();
     }
 
     public static boolean isCurrentUserId(String userId) {
-        String currentUserId = StpUtil.getLoginIdAsString();
-        return currentUserId != null && currentUserId.equals(userId);
+        return UserContext.isCurrentUserId(userId);
     }
 
     public static boolean isSuperAdminOrCurrentUser(String userId) {
-        return isSuperAdmin() || isCurrentUserId(userId);
+        return UserContext.isSuperAdminOrCurrentUser(userId);
     }
 
     @SuppressWarnings("unchecked")
     private static List<String> getRoleCodes() {
-        return (List<String>) StpUtil.getSession().get("roleCodes");
+        return UserContext.getRoleCodes();
     }
 }

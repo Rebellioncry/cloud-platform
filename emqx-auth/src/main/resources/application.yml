@@ -1,49 +1,16 @@
 spring:
   application:
     name: ${APP_NAME:emqx-auth}
+  config:
+    import: optional:nacos:emqx-auth.yaml?server-addr=${NACOS_SERVER_ADDR:172.26.76.190:8848}&group=DEFAULT_GROUP, optional:nacos:common.yaml?server-addr=${NACOS_SERVER_ADDR:172.26.76.190:8848}&group=DEFAULT_GROUP&refreshEnabled=true
   cloud:
     nacos:
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:172.26.76.190:8848}
+        group: DEFAULT_GROUP
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:172.26.76.190:8848}
-  datasource:
-    url: jdbc:mysql://${MYSQL_HOST:172.26.76.190}:${MYSQL_PORT:3306}/cloud_platform?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:root123}
-  data:
-    redis:
-      host: ${REDIS_HOST:172.26.76.190}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      database: 0
-      timeout: 3000ms
+        namespace: ${NACOS_NAMESPACE:}
 
 server:
   port: ${SERVER_PORT:8086}
-
-mybatis-plus:
-  mapper-locations: classpath*:mapper/**/*.xml
-  type-aliases-package: org.lyz.emqx.entity
-  configuration:
-    map-underscore-to-camel-case: true
-  global-config:
-    db-config:
-      id-type: assign_id
-      logic-delete-field: deleted
-      logic-not-delete-value: 0
-
-iot:
-  platform:
-    username: iot-platform
-    password: iot-platform-key
-
-logging:
-  level:
-    org.lyz: INFO
-    org.springframework: WARN
-  file:
-    name: logs/emqx-auth.log
-  logback:
-    rollingpolicy:
-      max-file-size: 50MB
-      max-history: 7

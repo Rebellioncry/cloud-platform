@@ -11,21 +11,7 @@ server:
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   type-aliases-package: org.lyz.auth.entity
-  configuration:
-    map-underscore-to-camel-case: true
-  global-config:
-    db-config:
-      id-type: assign_id
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
 
 sms:
   service:
     url: http://sms-service
-
-knife4j:
-  enable: true
-  setting:
-    language: zh_cn
-  cors: true

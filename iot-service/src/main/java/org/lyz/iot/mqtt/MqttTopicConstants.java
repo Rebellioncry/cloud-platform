@@ -15,6 +15,9 @@ public class MqttTopicConstants {
     public static final String SHARE_GROUP_DEFAULT = "iot-service";
 
     public static final String TOPIC_EVENT_PROPERTY_POST = SYS + "/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/" + POST;
+    public static final String TOPIC_EVENT_PROPERTY_PACK_POST = SYS + "/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/pack/" + POST;
+    public static final String TOPIC_EVENT_PROPERTY_HISTORY_POST = SYS + "/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/history/" + POST;
+    public static final String TOPIC_EVENT_PROPERTY_BATCH_POST = SYS + "/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/batch/" + POST;
     public static final String TOPIC_EVENT_REPORT_POST = SYS + "/+/" + THING + "/" + EVENT + "/" + PLUS + "/" + POST;
     public static final String TOPIC_SERVICE_REPLY = SYS + "/+/" + THING + "/" + SERVICE + "/" + PLUS + "/" + REPLY;
 
@@ -24,6 +27,9 @@ public class MqttTopicConstants {
         }
         return new String[]{
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_PROPERTY_POST,
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_PROPERTY_PACK_POST,
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_PROPERTY_HISTORY_POST,
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_PROPERTY_BATCH_POST,
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_REPORT_POST,
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_SERVICE_REPLY
         };
@@ -43,5 +49,17 @@ public class MqttTopicConstants {
 
     public static String buildEventPostTopic(String productKey, String deviceName, String identifier) {
         return SYS + "/" + productKey + "/" + deviceName + "/" + THING + "/" + EVENT + "/" + identifier + "/" + POST;
+    }
+
+    public static String buildEventPropertyHistoryPostTopic(String productKey, String deviceName) {
+        return SYS + "/" + productKey + "/" + deviceName + "/" + THING + "/" + EVENT + "/" + PROPERTY + "/history/" + POST;
+    }
+
+    public static String buildEventPropertyBatchPostTopic(String productKey, String deviceName) {
+        return SYS + "/" + productKey + "/" + deviceName + "/" + THING + "/" + EVENT + "/" + PROPERTY + "/batch/" + POST;
+    }
+
+    public static String buildEventPropertyPackPostTopic(String productKey, String deviceName) {
+        return SYS + "/" + productKey + "/" + deviceName + "/" + THING + "/" + EVENT + "/" + PROPERTY + "/pack/" + POST;
     }
 }

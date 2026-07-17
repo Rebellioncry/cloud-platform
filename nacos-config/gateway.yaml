@@ -38,14 +38,10 @@ spring:
               uri: lb://emqx-auth
               predicates:
                 - Path=/emqx/auth/**
-              filters:
-                - StripPrefix=1
             - id: iot-webhook
               uri: lb://iot-service
               predicates:
                 - Path=/emqx/device-status
-              filters:
-                - StripPrefix=1
           globalcors:
             cors-configurations:
               '[/**]':

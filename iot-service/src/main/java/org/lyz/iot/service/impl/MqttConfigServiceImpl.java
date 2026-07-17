@@ -5,8 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.lyz.common.core.context.SecurityUtils;
-import org.lyz.common.core.context.TenantContext;
+import org.lyz.common.config.TenantIgnore;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.common.core.result.PageResult;
 import org.lyz.iot.dto.MqttConfigDTO;
@@ -32,12 +31,6 @@ public class MqttConfigServiceImpl implements MqttConfigService {
     public PageResult<IotMqttConfig> list(int page, int size, String name) {
         Page<IotMqttConfig> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<IotMqttConfig> wrapper = new LambdaQueryWrapper<>();
-        if (!SecurityUtils.isSuperAdmin()) {
-            String tenantId = TenantContext.getTenantId();
-            if (tenantId != null) {
-                wrapper.eq(IotMqttConfig::getTenantId, tenantId);
-            }
-        }
         if (name != null && !name.isEmpty()) {
             wrapper.like(IotMqttConfig::getName, name);
         }
@@ -52,10 +45,6 @@ public class MqttConfigServiceImpl implements MqttConfigService {
         if (config == null) {
             throw new BusinessException("MQTT配置不存在");
         }
-        String tenantId = TenantContext.getTenantId();
-        if (!SecurityUtils.isSuperAdmin() && tenantId != null && !tenantId.equals(config.getTenantId())) {
-            throw new BusinessException("无权访问该配置");
-        }
         return config;
     }
 
@@ -63,7 +52,6 @@ public class MqttConfigServiceImpl implements MqttConfigService {
     @Transactional
     public IotMqttConfig create(MqttConfigDTO dto) {
         IotMqttConfig config = new IotMqttConfig();
-        config.setTenantId(TenantContext.getTenantId());
         config.setName(dto.getName());
         config.setDescription(dto.getDescription());
         config.setBroker(dto.getBroker());
@@ -114,6 +102,7 @@ public class MqttConfigServiceImpl implements MqttConfigService {
     }
 
     @Override
+    @TenantIgnore
     public void startClient(String id) {
         IotMqttConfig config = getById(id);
         config.setStatus(1);
@@ -123,6 +112,7 @@ public class MqttConfigServiceImpl implements MqttConfigService {
     }
 
     @Override
+    @TenantIgnore
     public void stopClient(String id) {
         IotMqttConfig config = getById(id);
         config.setStatus(0);

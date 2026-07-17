@@ -5,8 +5,6 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
-import org.lyz.common.core.context.SecurityUtils;
-import org.lyz.common.core.context.TenantContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.system.dto.UserDTO;
 import org.lyz.common.core.entity.SysUser;
@@ -37,12 +35,6 @@ public class UserServiceImpl implements UserService {
     public PageResult<UserDTO> list(int page, int size) {
         Page<SysUser> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        if (!SecurityUtils.isSuperAdmin()) {
-            String tenantId = TenantContext.getTenantId();
-            if (tenantId != null) {
-                wrapper.eq(SysUser::getTenantId, tenantId);
-            }
-        }
         wrapper.orderByDesc(SysUser::getCreateTime);
         IPage<SysUser> result = userMapper.selectPage(pageParam, wrapper);
 
@@ -82,10 +74,6 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
-        String tenantId = TenantContext.getTenantId();
-        if (tenantId != null && !tenantId.equals(user.getTenantId())) {
-            throw new BusinessException("无权访问该用户");
-        }
         UserDTO dto = toDTO(user);
         LambdaQueryWrapper<SysUserRole> roleWrapper = new LambdaQueryWrapper<>();
         roleWrapper.eq(SysUserRole::getUserId, id);
@@ -97,20 +85,13 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void create(UserDTO dto) {
-        String tenantId = TenantContext.getTenantId();
-        if (tenantId == null) {
-            tenantId = "1";
-        }
-
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getUsername, dto.getUsername())
-               .eq(SysUser::getTenantId, tenantId);
+        wrapper.eq(SysUser::getUsername, dto.getUsername());
         if (userMapper.selectCount(wrapper) > 0) {
             throw new BusinessException("用户名已存在");
         }
 
         SysUser user = toEntity(dto);
-        user.setTenantId(tenantId);
         userMapper.insert(user);
 
         if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {

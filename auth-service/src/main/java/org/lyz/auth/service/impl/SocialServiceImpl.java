@@ -15,7 +15,7 @@ import org.lyz.common.core.entity.SysUser;
 import org.lyz.auth.mapper.SysSocialMapper;
 import org.lyz.auth.mapper.SysUserMapper;
 import org.lyz.auth.service.SocialService;
-import org.lyz.common.core.context.TenantContext;
+import org.lyz.common.core.context.UserContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -84,7 +84,7 @@ public class SocialServiceImpl implements SocialService {
     }
 
     private void processSocialLogin(AuthUser authUser, String platform) {
-        String tenantId = TenantContext.getTenantId();
+        String tenantId = UserContext.getTenantId();
         if (tenantId == null) {
             tenantId = "1";
         }

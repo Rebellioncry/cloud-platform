@@ -5,6 +5,7 @@ public class TenantContext {
     private static final ThreadLocal<String> TENANT_ID = new ThreadLocal<>();
     private static final ThreadLocal<String> USER_ID = new ThreadLocal<>();
     private static final ThreadLocal<String> USERNAME = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> IGNORE_TENANT = new ThreadLocal<>();
 
     public static void setTenantId(String tenantId) {
         TENANT_ID.set(tenantId);
@@ -34,5 +35,18 @@ public class TenantContext {
         TENANT_ID.remove();
         USER_ID.remove();
         USERNAME.remove();
+        IGNORE_TENANT.remove();
+    }
+
+    public static void setIgnoreTenant(boolean ignore) {
+        IGNORE_TENANT.set(ignore);
+    }
+
+    public static boolean isIgnoreTenant() {
+        return Boolean.TRUE.equals(IGNORE_TENANT.get());
+    }
+
+    public static void clearIgnoreTenant() {
+        IGNORE_TENANT.remove();
     }
 }
