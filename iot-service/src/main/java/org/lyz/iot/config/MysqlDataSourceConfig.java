@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerInterceptor;
+import com.baomidou.mybatisplus.core.config.GlobalConfig;
+import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import org.lyz.common.config.MyMetaObjectHandler;
 import org.lyz.common.config.TenantLineHandlerImpl;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
@@ -46,7 +49,8 @@ public class MysqlDataSourceConfig {
     @Bean("mysqlSqlSessionFactory")
     public SqlSessionFactory mysqlSqlSessionFactory(
             @Qualifier("mysqlDataSource") DataSource dataSource,
-            @Qualifier("mysqlMybatisPlusInterceptor") MybatisPlusInterceptor interceptor) throws Exception {
+            @Qualifier("mysqlMybatisPlusInterceptor") MybatisPlusInterceptor interceptor,
+            MyMetaObjectHandler metaObjectHandler) throws Exception {
         MybatisSqlSessionFactoryBean factory = new MybatisSqlSessionFactoryBean();
         factory.setDataSource(dataSource);
         factory.setPlugins(interceptor);
@@ -54,6 +58,11 @@ public class MysqlDataSourceConfig {
         MybatisConfiguration configuration = new MybatisConfiguration();
         configuration.setMapUnderscoreToCamelCase(true);
         factory.setConfiguration(configuration);
+
+        GlobalConfig globalConfig = new GlobalConfig();
+        globalConfig.setMetaObjectHandler(metaObjectHandler);
+        factory.setGlobalConfig(globalConfig);
+
         factory.setTypeAliasesPackage("org.lyz.iot.entity");
 
         return factory.getObject();

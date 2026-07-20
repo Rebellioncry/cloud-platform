@@ -3,9 +3,8 @@ package org.lyz.iot.mqtt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.lyz.common.config.TenantIgnore;
 import org.lyz.iot.entity.IotMqttConfig;
-import org.lyz.iot.mapper.mysql.IotMqttConfigMapper;
+import org.lyz.iot.dao.IotMqttConfigDao;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -15,17 +14,16 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@TenantIgnore
 public class MqttAutoReconnect implements ApplicationRunner {
 
-    private final IotMqttConfigMapper mqttConfigMapper;
+    private final IotMqttConfigDao mqttConfigDao;
     private final MqttClientManager mqttClientManager;
 
     @Override
     public void run(ApplicationArguments args) {
         LambdaQueryWrapper<IotMqttConfig> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(IotMqttConfig::getStatus, 1);
-        List<IotMqttConfig> configs = mqttConfigMapper.selectList(wrapper);
+        List<IotMqttConfig> configs = mqttConfigDao.listIgnoreTenant(wrapper);
 
         if (configs.isEmpty()) {
             return;

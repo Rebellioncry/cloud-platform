@@ -3,8 +3,8 @@ package org.lyz.emqx.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.lyz.emqx.dao.EmqxAclDeviceDao;
 import org.lyz.emqx.entity.EmqxAclDevice;
-import org.lyz.emqx.mapper.EmqxAclDeviceMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +22,7 @@ public class EmqxAuthController {
     private static final String CACHE_PREFIX = "emqx:auth:";
     private static final long CACHE_TTL_MINUTES = 5;
 
-    private final EmqxAclDeviceMapper deviceMapper;
+    private final EmqxAclDeviceDao deviceDao;
     private final StringRedisTemplate redisTemplate;
 
     @Value("${iot.platform.username:iot-platform}")
@@ -67,7 +67,7 @@ public class EmqxAuthController {
             return ResponseEntity.ok(RESULT_DENY);
         }
 
-        EmqxAclDevice device = deviceMapper.selectOne(
+        EmqxAclDevice device = deviceDao.getOne(
                 new LambdaQueryWrapper<EmqxAclDevice>()
                         .eq(EmqxAclDevice::getDeviceName, username)
                         .last("LIMIT 1"));

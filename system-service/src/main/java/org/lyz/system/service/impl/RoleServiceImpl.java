@@ -9,8 +9,8 @@ import org.lyz.system.dto.RoleDTO;
 import org.lyz.system.entity.SysRole;
 import org.lyz.common.core.result.PageResult;
 import org.lyz.system.entity.SysRoleMenu;
-import org.lyz.system.mapper.SysRoleMapper;
-import org.lyz.system.mapper.SysRoleMenuMapper;
+import org.lyz.system.dao.SysRoleDao;
+import org.lyz.system.dao.SysRoleMenuDao;
 import org.lyz.system.service.RoleService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,27 +22,27 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
 
-    private final SysRoleMapper roleMapper;
-    private final SysRoleMenuMapper roleMenuMapper;
+    private final SysRoleDao roleDao;
+    private final SysRoleMenuDao roleMenuDao;
 
     @Override
     public PageResult<SysRole> list(int page, int size) {
         Page<SysRole> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SysRole> wrapper = new LambdaQueryWrapper<>();
-        IPage<SysRole> result = roleMapper.selectPage(pageParam, wrapper);
+        IPage<SysRole> result = roleDao.page(pageParam, wrapper);
         return PageResult.of(result.getTotal(), page, size, result.getRecords());
     }
 
     @Override
     public RoleDTO getById(String id) {
-        SysRole role = roleMapper.selectById(id);
+        SysRole role = roleDao.getById(id);
         if (role == null) {
             throw new BusinessException("角色不存在");
         }
         RoleDTO dto = toDTO(role);
         LambdaQueryWrapper<SysRoleMenu> menuWrapper = new LambdaQueryWrapper<>();
         menuWrapper.eq(SysRoleMenu::getRoleId, id);
-        List<SysRoleMenu> roleMenus = roleMenuMapper.selectList(menuWrapper);
+        List<SysRoleMenu> roleMenus = roleMenuDao.list(menuWrapper);
         dto.setMenuIds(roleMenus.stream().map(SysRoleMenu::getMenuId).collect(Collectors.toList()));
         return dto;
     }
@@ -51,12 +51,12 @@ public class RoleServiceImpl implements RoleService {
     public void create(RoleDTO dto) {
         LambdaQueryWrapper<SysRole> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysRole::getRoleCode, dto.getRoleCode());
-        if (roleMapper.selectCount(wrapper) > 0) {
+        if (roleDao.count(wrapper) > 0) {
             throw new BusinessException("角色编码已存在");
         }
 
         SysRole role = toEntity(dto);
-        roleMapper.insert(role);
+        roleDao.save(role);
 
         if (dto.getMenuIds() != null && !dto.getMenuIds().isEmpty()) {
             saveRoleMenus(role.getId(), dto.getMenuIds());
@@ -73,10 +73,10 @@ public class RoleServiceImpl implements RoleService {
             throw new BusinessException("不允许修改超级管理员角色");
         }
         SysRole role = toEntity(dto);
-        roleMapper.updateById(role);
+        roleDao.updateById(role);
 
         if (dto.getMenuIds() != null) {
-            roleMapper.deleteRoleMenus(dto.getId());
+            roleDao.deleteRoleMenus(dto.getId());
             if (!dto.getMenuIds().isEmpty()) {
                 saveRoleMenus(dto.getId(), dto.getMenuIds());
             }
@@ -89,8 +89,8 @@ public class RoleServiceImpl implements RoleService {
         if ("3".equals(id)) {
             throw new BusinessException("不允许删除超级管理员角色");
         }
-        roleMapper.deleteById(id);
-        roleMapper.deleteRoleMenus(id);
+        roleDao.removeById(id);
+        roleDao.deleteRoleMenus(id);
     }
 
     @Override
@@ -99,7 +99,7 @@ public class RoleServiceImpl implements RoleService {
         if ("3".equals(roleId)) {
             throw new BusinessException("不允许修改超级管理员角色菜单");
         }
-        roleMapper.deleteRoleMenus(roleId);
+        roleDao.deleteRoleMenus(roleId);
         if (menuIds != null && !menuIds.isEmpty()) {
             saveRoleMenus(roleId, menuIds);
         }
@@ -113,7 +113,7 @@ public class RoleServiceImpl implements RoleService {
             roleMenu.setMenuId(menuId);
             roleMenus.add(roleMenu);
         }
-        roleMenuMapper.insertBatchSomeColumn(roleMenus);
+        roleMenuDao.insertBatchSomeColumn(roleMenus);
     }
 
     private RoleDTO toDTO(SysRole role) {

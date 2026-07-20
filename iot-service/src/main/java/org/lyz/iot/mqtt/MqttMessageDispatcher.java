@@ -4,17 +4,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.lyz.common.config.TenantIgnore;
 import org.lyz.iot.mqtt.handler.PropertyPostHandler;
 import org.lyz.iot.mqtt.handler.EventPostHandler;
 import org.lyz.iot.mqtt.handler.ServiceSetHandler;
 import org.lyz.iot.mqtt.handler.ServiceInvokeHandler;
+import org.lyz.iot.rule.engine.RuleDataBus;
+import org.lyz.iot.rule.model.RuleData;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@TenantIgnore
 public class MqttMessageDispatcher {
 
     private final ObjectMapper objectMapper;
@@ -22,6 +24,7 @@ public class MqttMessageDispatcher {
     private final EventPostHandler eventPostHandler;
     private final ServiceSetHandler serviceSetHandler;
     private final ServiceInvokeHandler serviceInvokeHandler;
+    private final RuleDataBus ruleDataBus;
 
     public void dispatch(String topic, String payload) {
         try {
@@ -29,6 +32,8 @@ public class MqttMessageDispatcher {
             log.debug("MQTT消息: topic={}, normalized={}", topic, normalized);
             JsonNode root = objectMapper.readTree(payload);
             String method = root.has("method") ? root.get("method").asText() : "";
+
+            publishToRuleEngine(topic, normalized, root, method);
 
             if ("thing.property.post".equals(method)) {
                 propertyPostHandler.handle(normalized, root);
@@ -58,5 +63,33 @@ public class MqttMessageDispatcher {
 
     public String extractDeviceName(String topic) {
         return MqttTopicUtils.extractDeviceName(topic);
+    }
+
+    private void publishToRuleEngine(String rawTopic, String normalizedTopic, JsonNode root, String method) {
+        try {
+            String productKey = extractProductKey(normalizedTopic);
+            String deviceName = extractDeviceName(normalizedTopic);
+
+            RuleData ruleData = new RuleData();
+            ruleData.put("topic", rawTopic);
+            ruleData.put("normalizedTopic", normalizedTopic);
+            ruleData.put("productKey", productKey);
+            ruleData.put("deviceName", deviceName);
+            ruleData.put("method", method);
+            ruleData.put("payload", objectMapper.convertValue(root, java.util.Map.class));
+
+            if ("thing.property.post".equals(method)) {
+                ruleData.put("eventType", "property");
+            } else if (method.startsWith("thing.event.") && method.endsWith(".post")) {
+                String eventName = method.replace("thing.event.", "").replace(".post", "");
+                ruleData.put("eventType", eventName);
+            } else {
+                ruleData.put("eventType", method);
+            }
+
+            ruleDataBus.publish(ruleData);
+        } catch (Exception e) {
+            log.error("发布规则引擎事件失败: topic={}", rawTopic, e);
+        }
     }
 }

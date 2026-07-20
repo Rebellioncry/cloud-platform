@@ -35,4 +35,7 @@ public class IotDeviceTelemetry {
 
     @Schema(description = "产品名称(tag)")
     private String productName;
+
+    @Schema(description = "子表日期后缀(yyyyMMdd)")
+    private String tableDate;
 }

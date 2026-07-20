@@ -3,7 +3,7 @@
 <mapper namespace="org.lyz.iot.mapper.tdengine.DeviceLogMapper">
 
     <insert id="insert">
-        INSERT INTO device_log_${l.deviceId} USING device_log
+        INSERT INTO device_log_${l.deviceId}_${l.tableDate} USING device_log
         TAGS (#{l.deviceId}, #{l.productKey}, #{l.deviceName})
         VALUES (#{l.ts}, #{l.logType}, #{l.content}, #{l.messageId})
     </insert>
@@ -17,6 +17,14 @@
         </if>
         AND ts >= #{startTime} AND ts &lt;= #{endTime}
         ORDER BY ts DESC
+    </select>
+
+    <select id="selectLatestEvents" resultType="org.lyz.iot.entity.IotDeviceLog">
+        SELECT ts, log_type, content, message_id
+        FROM device_log
+        WHERE device_id = #{deviceId} AND log_type = 'event'
+        ORDER BY ts DESC
+        LIMIT #{limit}
     </select>
 
 </mapper>

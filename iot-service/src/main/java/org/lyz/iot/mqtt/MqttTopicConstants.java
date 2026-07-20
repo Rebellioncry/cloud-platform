@@ -14,12 +14,16 @@ public class MqttTopicConstants {
 
     public static final String SHARE_GROUP_DEFAULT = "iot-service";
 
-    public static final String TOPIC_EVENT_PROPERTY_POST = SYS + "/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/" + POST;
-    public static final String TOPIC_EVENT_PROPERTY_PACK_POST = SYS + "/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/pack/" + POST;
-    public static final String TOPIC_EVENT_PROPERTY_HISTORY_POST = SYS + "/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/history/" + POST;
-    public static final String TOPIC_EVENT_PROPERTY_BATCH_POST = SYS + "/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/batch/" + POST;
-    public static final String TOPIC_EVENT_REPORT_POST = SYS + "/+/" + THING + "/" + EVENT + "/" + PLUS + "/" + POST;
-    public static final String TOPIC_SERVICE_REPLY = SYS + "/+/" + THING + "/" + SERVICE + "/" + PLUS + "/" + REPLY;
+    public static final String TOPIC_EVENT_PROPERTY_POST = SYS + "/+/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/" + POST;
+    public static final String TOPIC_PROPERTY_POST = SYS + "/+/+/" + THING + "/" + PROPERTY + "/" + POST;
+    public static final String TOPIC_EVENT_PROPERTY_PACK_POST = SYS + "/+/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/pack/" + POST;
+    public static final String TOPIC_PROPERTY_PACK_POST = SYS + "/+/+/" + THING + "/" + PROPERTY + "/pack/" + POST;
+    public static final String TOPIC_EVENT_PROPERTY_HISTORY_POST = SYS + "/+/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/history/" + POST;
+    public static final String TOPIC_PROPERTY_HISTORY_POST = SYS + "/+/+/" + THING + "/" + PROPERTY + "/history/" + POST;
+    public static final String TOPIC_EVENT_PROPERTY_BATCH_POST = SYS + "/+/+/" + THING + "/" + EVENT + "/" + PROPERTY + "/batch/" + POST;
+    public static final String TOPIC_PROPERTY_BATCH_POST = SYS + "/+/+/" + THING + "/" + PROPERTY + "/batch/" + POST;
+    public static final String TOPIC_EVENT_REPORT_POST = SYS + "/+/+/" + THING + "/" + EVENT + "/" + PLUS + "/" + POST;
+    public static final String TOPIC_SERVICE_REPLY = SYS + "/+/+/" + THING + "/" + SERVICE + "/" + PLUS + "/" + REPLY;
 
     public static String[] getSubscribeTopics(String group) {
         if (group == null || group.isEmpty()) {
@@ -27,10 +31,13 @@ public class MqttTopicConstants {
         }
         return new String[]{
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_PROPERTY_POST,
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_PROPERTY_POST,
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_PROPERTY_PACK_POST,
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_PROPERTY_PACK_POST,
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_PROPERTY_HISTORY_POST,
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_PROPERTY_HISTORY_POST,
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_PROPERTY_BATCH_POST,
-                SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_REPORT_POST,
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_PROPERTY_BATCH_POST,
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_SERVICE_REPLY
         };
     }

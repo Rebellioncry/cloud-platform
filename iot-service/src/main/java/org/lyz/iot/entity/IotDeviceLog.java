@@ -29,4 +29,7 @@ public class IotDeviceLog {
 
     @Schema(description = "设备名称(tag)")
     private String deviceName;
+
+    @Schema(description = "子表日期后缀(yyyyMMdd)")
+    private String tableDate;
 }

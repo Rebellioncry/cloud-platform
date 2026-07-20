@@ -6,24 +6,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.lyz.iot.entity.IotDevice;
+import org.lyz.iot.entity.IotDeviceLog;
 import org.lyz.iot.entity.IotDeviceTelemetry;
-import org.lyz.iot.mapper.mysql.IotDeviceMapper;
-import org.lyz.iot.mapper.mysql.IotDeviceShadowMapper;
-import org.lyz.iot.mapper.tdengine.DeviceTelemetryMapper;
-import org.lyz.iot.entity.IotDeviceShadow;
+import org.lyz.iot.dao.IotDeviceDao;
+import org.lyz.iot.service.DeviceLogService;
+import org.lyz.iot.service.TelemetryService;
 import org.lyz.iot.mqtt.MqttTopicUtils;
 import org.lyz.iot.service.DeviceShadowService;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class PropertyPostHandler {
 
-    private final IotDeviceMapper deviceMapper;
-    private final DeviceTelemetryMapper telemetryMapper;
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+    private final IotDeviceDao deviceDao;
+    private final TelemetryService telemetryService;
+    private final DeviceLogService deviceLogService;
     private final DeviceShadowService shadowService;
     private final ObjectMapper objectMapper;
 
@@ -32,7 +37,7 @@ public class PropertyPostHandler {
             String productKey = MqttTopicUtils.extractProductKey(topic);
             String deviceName = MqttTopicUtils.extractDeviceName(topic);
 
-            IotDevice device = deviceMapper.selectOne(
+            IotDevice device = deviceDao.getOneIgnoreTenant(
                     new LambdaQueryWrapper<IotDevice>()
                             .eq(IotDevice::getProductKey, productKey)
                             .eq(IotDevice::getDeviceName, deviceName));
@@ -40,9 +45,16 @@ public class PropertyPostHandler {
                 log.warn("属性上报: 未找到设备. productKey={}, deviceName={}", productKey, deviceName);
                 return;
             }
+            if (device.getStatus() != null && device.getStatus() == 3) {
+                log.info("属性上报: 设备已禁用, 跳过处理. device={}", device.getDeviceName());
+                return;
+            }
 
             JsonNode params = root.get("params");
             if (params == null || !params.isObject()) return;
+
+            String tableDate = LocalDate.now().format(DATE_FMT);
+            String messageId = root.has("id") ? root.get("id").asText() : null;
 
             params.fields().forEachRemaining(entry -> {
                 String identifier = entry.getKey();
@@ -58,14 +70,26 @@ public class PropertyPostHandler {
                 telemetry.setProductKey(productKey);
                 telemetry.setPropertyId(identifier);
                 telemetry.setDeviceName(deviceName);
-                telemetryMapper.insert(telemetry);
+                telemetry.setTableDate(tableDate);
+                telemetryService.save(telemetry);
 
                 shadowService.updateReported(device.getId(), identifier, value);
             });
 
             device.setStatus(1);
             device.setLastOnlineTime(LocalDateTime.now());
-            deviceMapper.updateById(device);
+            deviceDao.updateByIdIgnoreTenant(device);
+
+            IotDeviceLog deviceLog = new IotDeviceLog();
+            deviceLog.setTs(LocalDateTime.now());
+            deviceLog.setLogType("property_post");
+            deviceLog.setContent("属性上报: " + params);
+            deviceLog.setMessageId(messageId);
+            deviceLog.setDeviceId(device.getId());
+            deviceLog.setProductKey(productKey);
+            deviceLog.setDeviceName(deviceName);
+            deviceLog.setTableDate(tableDate);
+            deviceLogService.save(deviceLog);
 
             log.info("属性上报处理完成: device={}, properties={}", device.getDeviceName(), params);
         } catch (Exception e) {
@@ -78,7 +102,7 @@ public class PropertyPostHandler {
             String productKey = MqttTopicUtils.extractProductKey(topic);
             String deviceName = MqttTopicUtils.extractDeviceName(topic);
 
-            IotDevice device = deviceMapper.selectOne(
+            IotDevice device = deviceDao.getOneIgnoreTenant(
                     new LambdaQueryWrapper<IotDevice>()
                             .eq(IotDevice::getProductKey, productKey)
                             .eq(IotDevice::getDeviceName, deviceName));
@@ -86,9 +110,15 @@ public class PropertyPostHandler {
                 log.warn("历史属性上报: 未找到设备. productKey={}, deviceName={}", productKey, deviceName);
                 return;
             }
+            if (device.getStatus() != null && device.getStatus() == 3) {
+                log.info("历史属性上报: 设备已禁用, 跳过处理. device={}", device.getDeviceName());
+                return;
+            }
 
             JsonNode params = root.get("params");
             if (params == null || !params.isObject()) return;
+
+            String tableDate = LocalDate.now().format(DATE_FMT);
 
             params.fields().forEachRemaining(entry -> {
                 String identifier = entry.getKey();
@@ -104,10 +134,22 @@ public class PropertyPostHandler {
                 telemetry.setProductKey(productKey);
                 telemetry.setPropertyId(identifier);
                 telemetry.setDeviceName(deviceName);
-                telemetryMapper.insert(telemetry);
+                telemetry.setTableDate(tableDate);
+                telemetryService.save(telemetry);
 
                 shadowService.updateReported(device.getId(), identifier, value);
             });
+
+            IotDeviceLog deviceLog = new IotDeviceLog();
+            deviceLog.setTs(LocalDateTime.now());
+            deviceLog.setLogType("property_history");
+            deviceLog.setContent("历史属性上报: " + params);
+            deviceLog.setMessageId(root.has("id") ? root.get("id").asText() : null);
+            deviceLog.setDeviceId(device.getId());
+            deviceLog.setProductKey(productKey);
+            deviceLog.setDeviceName(deviceName);
+            deviceLog.setTableDate(tableDate);
+            deviceLogService.save(deviceLog);
 
             log.info("历史属性上报处理完成: device={}, properties={}", device.getDeviceName(), params);
         } catch (Exception e) {
@@ -120,7 +162,7 @@ public class PropertyPostHandler {
             String productKey = MqttTopicUtils.extractProductKey(topic);
             String deviceName = MqttTopicUtils.extractDeviceName(topic);
 
-            IotDevice device = deviceMapper.selectOne(
+            IotDevice device = deviceDao.getOneIgnoreTenant(
                     new LambdaQueryWrapper<IotDevice>()
                             .eq(IotDevice::getProductKey, productKey)
                             .eq(IotDevice::getDeviceName, deviceName));
@@ -128,9 +170,15 @@ public class PropertyPostHandler {
                 log.warn("批量属性上报: 未找到设备. productKey={}, deviceName={}", productKey, deviceName);
                 return;
             }
+            if (device.getStatus() != null && device.getStatus() == 3) {
+                log.info("批量属性上报: 设备已禁用, 跳过处理. device={}", device.getDeviceName());
+                return;
+            }
 
             JsonNode params = root.get("params");
             if (params == null || !params.isObject()) return;
+
+            String tableDate = LocalDate.now().format(DATE_FMT);
 
             params.fields().forEachRemaining(entry -> {
                 String identifier = entry.getKey();
@@ -146,10 +194,22 @@ public class PropertyPostHandler {
                 telemetry.setProductKey(productKey);
                 telemetry.setPropertyId(identifier);
                 telemetry.setDeviceName(deviceName);
-                telemetryMapper.insert(telemetry);
+                telemetry.setTableDate(tableDate);
+                telemetryService.save(telemetry);
 
                 shadowService.updateReported(device.getId(), identifier, value);
             });
+
+            IotDeviceLog deviceLog = new IotDeviceLog();
+            deviceLog.setTs(LocalDateTime.now());
+            deviceLog.setLogType("property_batch");
+            deviceLog.setContent("批量属性上报: " + params);
+            deviceLog.setMessageId(root.has("id") ? root.get("id").asText() : null);
+            deviceLog.setDeviceId(device.getId());
+            deviceLog.setProductKey(productKey);
+            deviceLog.setDeviceName(deviceName);
+            deviceLog.setTableDate(tableDate);
+            deviceLogService.save(deviceLog);
 
             log.info("批量属性上报处理完成: device={}, properties={}", device.getDeviceName(), params);
         } catch (Exception e) {
@@ -162,7 +222,7 @@ public class PropertyPostHandler {
             String productKey = MqttTopicUtils.extractProductKey(topic);
             String deviceName = MqttTopicUtils.extractDeviceName(topic);
 
-            IotDevice device = deviceMapper.selectOne(
+            IotDevice device = deviceDao.getOneIgnoreTenant(
                     new LambdaQueryWrapper<IotDevice>()
                             .eq(IotDevice::getProductKey, productKey)
                             .eq(IotDevice::getDeviceName, deviceName));
@@ -170,9 +230,15 @@ public class PropertyPostHandler {
                 log.warn("网关批量上报: 未找到设备. productKey={}, deviceName={}", productKey, deviceName);
                 return;
             }
+            if (device.getStatus() != null && device.getStatus() == 3) {
+                log.info("网关批量上报: 设备已禁用, 跳过处理. device={}", device.getDeviceName());
+                return;
+            }
 
             JsonNode params = root.get("params");
             if (params == null) return;
+
+            String tableDate = LocalDate.now().format(DATE_FMT);
 
             JsonNode subDevices = params.get("subDevices");
             if (subDevices != null && subDevices.isArray()) {
@@ -196,7 +262,8 @@ public class PropertyPostHandler {
                             telemetry.setProductKey(subProductKey);
                             telemetry.setPropertyId(identifier);
                             telemetry.setDeviceName(subDeviceName);
-                            telemetryMapper.insert(telemetry);
+                            telemetry.setTableDate(tableDate);
+                            telemetryService.save(telemetry);
                         });
                     }
                 }
@@ -218,11 +285,23 @@ public class PropertyPostHandler {
                     telemetry.setProductKey(productKey);
                     telemetry.setPropertyId(identifier);
                     telemetry.setDeviceName(deviceName);
-                    telemetryMapper.insert(telemetry);
+                    telemetry.setTableDate(tableDate);
+                    telemetryService.save(telemetry);
 
                     shadowService.updateReported(device.getId(), identifier, value);
                 });
             }
+
+            IotDeviceLog deviceLog = new IotDeviceLog();
+            deviceLog.setTs(LocalDateTime.now());
+            deviceLog.setLogType("property_pack");
+            deviceLog.setContent("网关批量上报: " + root.get("params"));
+            deviceLog.setMessageId(root.has("id") ? root.get("id").asText() : null);
+            deviceLog.setDeviceId(device.getId());
+            deviceLog.setProductKey(productKey);
+            deviceLog.setDeviceName(deviceName);
+            deviceLog.setTableDate(tableDate);
+            deviceLogService.save(deviceLog);
 
             log.info("网关批量上报处理完成: device={}, subDevices={}", deviceName,
                     subDevices != null ? subDevices.size() : 0);

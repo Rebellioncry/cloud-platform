@@ -40,10 +40,6 @@ export function updateThingModel(id, thingModel) {
   return request({ url: `/iot/product/${id}/thing-model`, method: 'put', data: thingModel, headers: { 'Content-Type': 'text/plain' } })
 }
 
-export function publishThingModel(id) {
-  return request({ url: `/iot/product/${id}/thing-model/publish`, method: 'post' })
-}
-
 // ==================== 设备管理 ====================
 
 export function getDeviceList(params) {
@@ -143,3 +139,40 @@ export function startMqttConfig(id) {
 export function stopMqttConfig(id) {
   return request({ url: `/iot/mqtt/config/${id}/stop`, method: 'post' })
 }
+
+// ==================== 规则引擎 ====================
+
+export function getRuleList(params) {
+  return request({ url: '/iot/rule/list', method: 'get', params })
+}
+
+export function getRule(id) {
+  return request({ url: `/iot/rule/${id}`, method: 'get' })
+}
+
+export function addRule(data) {
+  return request({ url: '/iot/rule', method: 'post', data })
+}
+
+export function updateRule(id, data) {
+  return request({ url: `/iot/rule/${id}`, method: 'put', data })
+}
+
+export function deleteRule(id) {
+  return request({ url: `/iot/rule/${id}`, method: 'delete' })
+}
+
+export function startRule(id) {
+  return request({ url: `/iot/rule/${id}/start`, method: 'post' })
+}
+
+export function stopRule(id) {
+  return request({ url: `/iot/rule/${id}/stop`, method: 'post' })
+}
+
+// ==================== 规则执行日志 ====================
+
+export function getRuleLogList(params) {
+  return request({ url: '/iot/rule/log/list', method: 'get', params })
+}
+

@@ -9,8 +9,8 @@ import org.lyz.common.core.result.PageResult;
 import org.lyz.iot.dto.DeviceDTO;
 import org.lyz.iot.entity.IotDevice;
 import org.lyz.iot.entity.IotProduct;
-import org.lyz.iot.mapper.mysql.IotDeviceMapper;
-import org.lyz.iot.mapper.mysql.IotProductMapper;
+import org.lyz.iot.dao.IotDeviceDao;
+import org.lyz.iot.dao.IotProductDao;
 import org.lyz.iot.service.DeviceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,8 +22,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DeviceServiceImpl implements DeviceService {
 
-    private final IotDeviceMapper deviceMapper;
-    private final IotProductMapper productMapper;
+    private final IotDeviceDao deviceDao;
+    private final IotProductDao productDao;
 
     @Override
     public PageResult<IotDevice> list(int page, int size, String productId, String name, Integer status) {
@@ -39,13 +39,13 @@ public class DeviceServiceImpl implements DeviceService {
             wrapper.eq(IotDevice::getStatus, status);
         }
         wrapper.orderByDesc(IotDevice::getCreateTime);
-        IPage<IotDevice> result = deviceMapper.selectPage(pageParam, wrapper);
+        IPage<IotDevice> result = deviceDao.page(pageParam, wrapper);
         return PageResult.of(result.getTotal(), page, size, result.getRecords());
     }
 
     @Override
     public IotDevice getById(String id) {
-        IotDevice device = deviceMapper.selectById(id);
+        IotDevice device = deviceDao.getById(id);
         if (device == null) {
             throw new BusinessException("设备不存在");
         }
@@ -55,7 +55,7 @@ public class DeviceServiceImpl implements DeviceService {
     @Override
     @Transactional
     public IotDevice create(DeviceDTO dto) {
-        IotProduct product = productMapper.selectById(dto.getProductId());
+        IotProduct product = productDao.getById(dto.getProductId());
         if (product == null) {
             throw new BusinessException("产品不存在");
         }
@@ -70,7 +70,7 @@ public class DeviceServiceImpl implements DeviceService {
         device.setTags(dto.getTags());
         device.setParentDeviceId(dto.getParentDeviceId());
         device.setStatus(0);
-        deviceMapper.insert(device);
+        deviceDao.save(device);
         return device;
     }
 
@@ -87,13 +87,17 @@ public class DeviceServiceImpl implements DeviceService {
         if (dto.getNickname() != null) device.setNickname(dto.getNickname());
         if (dto.getFirmwareVersion() != null) device.setFirmwareVersion(dto.getFirmwareVersion());
         if (dto.getTags() != null) device.setTags(dto.getTags());
-        deviceMapper.updateById(device);
+        deviceDao.updateById(device);
     }
 
     @Override
     @Transactional
     public void delete(String id) {
-        deviceMapper.deleteById(id);
+        IotDevice device = getById(id);
+        if (device.getStatus() != null && device.getStatus() != 3) {
+            throw new BusinessException("设备未禁用，无法删除。请先禁用设备");
+        }
+        deviceDao.removeById(id);
     }
 
     @Override
@@ -102,7 +106,7 @@ public class DeviceServiceImpl implements DeviceService {
         IotDevice device = getById(id);
         device.setStatus(1);
         device.setLastOnlineTime(LocalDateTime.now());
-        deviceMapper.updateById(device);
+        deviceDao.updateById(device);
     }
 
     @Override
@@ -110,7 +114,7 @@ public class DeviceServiceImpl implements DeviceService {
     public void disable(String id) {
         IotDevice device = getById(id);
         device.setStatus(3);
-        deviceMapper.updateById(device);
+        deviceDao.updateById(device);
     }
 
     private String generateDeviceKey() {

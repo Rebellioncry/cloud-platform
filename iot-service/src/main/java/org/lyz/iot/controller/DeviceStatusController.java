@@ -38,7 +38,7 @@ public class DeviceStatusController {
     @GetMapping("/{id}/status/property/{propertyId}/history")
     public Result<List<IotDeviceTelemetry>> getPropertyHistory(
             @PathVariable(value = "id") String deviceId,
-            @PathVariable String propertyId,
+            @PathVariable(value = "propertyId") String propertyId,
             @RequestParam(value = "startTime") @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
             @RequestParam(value = "endTime") @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
         return Result.success(statusService.getPropertyHistory(deviceId, propertyId, startTime, endTime));

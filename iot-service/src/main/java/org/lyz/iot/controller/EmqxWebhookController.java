@@ -6,12 +6,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.lyz.common.core.result.Result;
 import org.lyz.iot.entity.IotDevice;
-import org.lyz.iot.mapper.mysql.IotDeviceMapper;
-import org.lyz.iot.mapper.tdengine.DeviceLogMapper;
+import org.lyz.iot.dao.IotDeviceDao;
+import org.lyz.iot.service.DeviceLogService;
 import org.lyz.iot.entity.IotDeviceLog;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @Slf4j
@@ -21,8 +23,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EmqxWebhookController {
 
-    private final IotDeviceMapper deviceMapper;
-    private final DeviceLogMapper deviceLogMapper;
+    private final IotDeviceDao deviceDao;
+    private final DeviceLogService deviceLogService;
 
     @Operation(summary = "设备上下线回调(EMQX Webhook)")
     @PostMapping("/device-status")
@@ -38,7 +40,7 @@ public class EmqxWebhookController {
             return Result.success(null);
         }
 
-        IotDevice device = deviceMapper.selectOne(
+        IotDevice device = deviceDao.getOne(
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<IotDevice>()
                         .eq(IotDevice::getDeviceName, username)
                         .last("LIMIT 1"));
@@ -57,12 +59,12 @@ public class EmqxWebhookController {
                     device.setIpAddress(peername.substring(0, peername.lastIndexOf(":")));
                 }
             }
-            deviceMapper.updateById(device);
+            deviceDao.updateById(device);
             saveDeviceLog(device, "online", "设备上线", null);
             log.info("设备上线: {}", device.getDeviceName());
         } else if ("client.disconnected".equals(event)) {
             device.setStatus(2);
-            deviceMapper.updateById(device);
+            deviceDao.updateById(device);
             String reason = (String) payload.get("reason");
             saveDeviceLog(device, "offline", "设备离线: " + (reason != null ? reason : ""), null);
             log.info("设备离线: {}", device.getDeviceName());
@@ -80,6 +82,7 @@ public class EmqxWebhookController {
         deviceLog.setDeviceId(String.valueOf(device.getId()));
         deviceLog.setProductKey(device.getProductKey());
         deviceLog.setDeviceName(device.getDeviceName());
-        deviceLogMapper.insert(deviceLog);
+        deviceLog.setTableDate(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+        deviceLogService.save(deviceLog);
     }
 }

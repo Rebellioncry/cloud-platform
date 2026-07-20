@@ -272,6 +272,7 @@ SET @menu_iot = '20';
 SET @menu_iot_product = '21';
 SET @menu_iot_device = '22';
 SET @menu_iot_mqtt = '23';
+SET @menu_iot_rule = '24';
 SET @menu_audit = '16';
 
 INSERT INTO sys_tenant (id, tenant_code, tenant_name, contact, mobile, email, status)
@@ -289,6 +290,7 @@ INSERT INTO sys_menu (id, tenant_id, parent_id, menu_type, menu_name, path, comp
 (@menu_iot_product, @tenant_id, @menu_iot, 1, '产品管理', '/iot/product', 'iot/product/index', 'Box', 'iot:product:list', 1),
 (@menu_iot_device, @tenant_id, @menu_iot, 1, '设备管理', '/iot/device', 'iot/device/index', 'Cpu', 'iot:device:list', 2),
 (@menu_iot_mqtt, @tenant_id, @menu_iot, 1, 'MQTT配置', '/iot/mqtt', 'iot/mqtt/index', 'Connection', 'iot:mqtt:list', 3),
+(@menu_iot_rule, @tenant_id, @menu_iot, 1, '规则引擎', '/iot/rule', 'iot/rule/index', 'Filter', 'iot:rule:list', 4),
 (@menu_system, @tenant_id, '0', 0, '系统管理', '/system', NULL, 'Setting', '', 2),
 (@menu_user, @tenant_id, @menu_system, 1, '用户管理', '/system/user', 'system/user/index', 'User', 'system:user:list', 1),
 (@menu_role, @tenant_id, @menu_system, 1, '角色管理', '/system/role', 'system/role/index', 'UserFilled', 'system:role:list', 2),
@@ -305,6 +307,7 @@ INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES
 ('32', @admin_role_id, @menu_iot_product),
 ('33', @admin_role_id, @menu_iot_device),
 ('34', @admin_role_id, @menu_iot_mqtt),
+('41', @admin_role_id, @menu_iot_rule),
 ('35', @admin_role_id, @menu_system),
 ('36', @admin_role_id, @menu_user),
 ('37', @admin_role_id, @menu_role),
@@ -396,6 +399,46 @@ CREATE TABLE IF NOT EXISTS iot_device_command (
     KEY idx_command_device (device_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- IoT Rule Engine Table
+CREATE TABLE IF NOT EXISTS iot_rule (
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(500) DEFAULT NULL,
+    rule_type TINYINT DEFAULT 0,
+    rule_model JSON DEFAULT NULL,
+    status TINYINT DEFAULT 0,
+    match_count BIGINT DEFAULT 0,
+    last_execute_time DATETIME DEFAULT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
+    PRIMARY KEY (id),
+    KEY idx_tenant (tenant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- IoT Rule Execution Log Table
+CREATE TABLE IF NOT EXISTS iot_rule_exec_log (
+    id VARCHAR(32) NOT NULL,
+    rule_id VARCHAR(32) NOT NULL,
+    rule_name VARCHAR(100) DEFAULT NULL,
+    node_id VARCHAR(100) DEFAULT NULL,
+    node_name VARCHAR(100) DEFAULT NULL,
+    node_type VARCHAR(50) DEFAULT NULL,
+    status TINYINT DEFAULT 0 COMMENT '0成功 1失败',
+    input_data JSON DEFAULT NULL,
+    output_data JSON DEFAULT NULL,
+    error_message TEXT DEFAULT NULL,
+    duration BIGINT DEFAULT 0 COMMENT '执行耗时(毫秒)',
+    device_key VARCHAR(200) DEFAULT NULL,
+    product_key VARCHAR(200) DEFAULT NULL,
+    execute_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_rule_id (rule_id),
+    KEY idx_execute_time (execute_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- IoT MQTT Config Table
 CREATE TABLE IF NOT EXISTS iot_mqtt_config (
     id VARCHAR(32) NOT NULL,
@@ -419,3 +462,4 @@ CREATE TABLE IF NOT EXISTS iot_mqtt_config (
     version INT DEFAULT 0,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

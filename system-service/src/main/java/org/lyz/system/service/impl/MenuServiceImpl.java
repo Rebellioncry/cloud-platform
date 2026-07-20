@@ -8,7 +8,7 @@ import org.lyz.common.core.exception.BusinessException;
 import org.lyz.system.dto.MenuDTO;
 import org.lyz.system.entity.SysMenu;
 import org.lyz.common.core.result.PageResult;
-import org.lyz.system.mapper.SysMenuMapper;
+import org.lyz.system.dao.SysMenuDao;
 import org.lyz.system.service.MenuService;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
@@ -19,14 +19,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MenuServiceImpl implements MenuService {
 
-    private final SysMenuMapper menuMapper;
+    private final SysMenuDao menuDao;
 
     @Override
     public PageResult<SysMenu> list(int page, int size) {
         Page<SysMenu> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(SysMenu::getOrderNum);
-        IPage<SysMenu> result = menuMapper.selectPage(pageParam, wrapper);
+        IPage<SysMenu> result = menuDao.page(pageParam, wrapper);
         return PageResult.of(result.getTotal(), page, size, result.getRecords());
     }
 
@@ -39,12 +39,12 @@ public class MenuServiceImpl implements MenuService {
     private List<SysMenu> listAll() {
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(SysMenu::getOrderNum);
-        return menuMapper.selectList(wrapper);
+        return menuDao.list(wrapper);
     }
 
     @Override
     public MenuDTO getById(String id) {
-        SysMenu menu = menuMapper.selectById(id);
+        SysMenu menu = menuDao.getById(id);
         if (menu == null) {
             throw new BusinessException("菜单不存在");
         }
@@ -54,7 +54,7 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public void create(MenuDTO dto) {
         SysMenu menu = toEntity(dto);
-        menuMapper.insert(menu);
+        menuDao.save(menu);
     }
 
     @Override
@@ -63,17 +63,17 @@ public class MenuServiceImpl implements MenuService {
             throw new BusinessException("菜单ID不能为空");
         }
         SysMenu menu = toEntity(dto);
-        menuMapper.updateById(menu);
+        menuDao.updateById(menu);
     }
 
     @Override
     public void delete(String id) {
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysMenu::getParentId, id);
-        if (menuMapper.selectCount(wrapper) > 0) {
+        if (menuDao.count(wrapper) > 0) {
             throw new BusinessException("存在子菜单，无法删除");
         }
-        menuMapper.deleteById(id);
+        menuDao.removeById(id);
     }
 
     private List<MenuDTO> buildTree(List<SysMenu> menus, String parentId) {

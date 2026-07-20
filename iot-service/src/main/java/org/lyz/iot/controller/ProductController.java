@@ -73,11 +73,4 @@ public class ProductController {
         productService.updateThingModel(id, thingModel);
         return Result.success(null);
     }
-
-    @Operation(summary = "发布物模型")
-    @PostMapping("/{id}/thing-model/publish")
-    public Result<Void> publishThingModel(@PathVariable(value = "id") String id) {
-        productService.publishThingModel(id);
-        return Result.success(null);
-    }
 }

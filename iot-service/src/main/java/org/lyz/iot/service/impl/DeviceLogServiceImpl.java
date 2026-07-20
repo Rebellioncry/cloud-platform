@@ -43,4 +43,9 @@ public class DeviceLogServiceImpl implements DeviceLogService {
 
         return PageResult.of(total, page, size, dtoList);
     }
+
+    @Override
+    public void save(IotDeviceLog deviceLog) {
+        deviceLogMapper.insert(deviceLog);
+    }
 }

@@ -7,9 +7,9 @@ import org.lyz.iot.entity.IotDevice;
 import org.lyz.iot.entity.IotDeviceCommand;
 import org.lyz.iot.entity.IotMqttConfig;
 import org.lyz.iot.entity.IotProduct;
-import org.lyz.iot.mapper.mysql.IotDeviceMapper;
-import org.lyz.iot.mapper.mysql.IotMqttConfigMapper;
-import org.lyz.iot.mapper.mysql.IotProductMapper;
+import org.lyz.iot.dao.IotDeviceDao;
+import org.lyz.iot.dao.IotMqttConfigDao;
+import org.lyz.iot.dao.IotProductDao;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -17,19 +17,19 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CommandEventPublisher {
 
-    private final IotDeviceMapper deviceMapper;
-    private final IotProductMapper productMapper;
-    private final IotMqttConfigMapper mqttConfigMapper;
+    private final IotDeviceDao deviceDao;
+    private final IotProductDao productDao;
+    private final IotMqttConfigDao mqttConfigDao;
     private final MqttClientManager mqttClientManager;
 
     public void publishCommand(IotDeviceCommand command) {
-        IotDevice device = deviceMapper.selectById(command.getDeviceId());
+        IotDevice device = deviceDao.getById(command.getDeviceId());
         if (device == null) {
             log.warn("命令下发: 设备不存在, deviceId={}", command.getDeviceId());
             return;
         }
 
-        IotProduct product = productMapper.selectById(device.getProductId());
+        IotProduct product = productDao.getById(device.getProductId());
         if (product == null) {
             log.warn("命令下发: 产品不存在, productId={}", device.getProductId());
             return;
@@ -63,6 +63,6 @@ public class CommandEventPublisher {
         LambdaQueryWrapper<IotMqttConfig> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(IotMqttConfig::getStatus, 1);
         wrapper.last("LIMIT 1");
-        return mqttConfigMapper.selectOne(wrapper);
+        return mqttConfigDao.getOne(wrapper);
     }
 }

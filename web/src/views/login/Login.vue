@@ -190,15 +190,16 @@ const handleEmailLogin = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0a1628 0%, #122a45 50%, #0f1d2e 100%);
 }
 
 .login-box {
   width: 420px;
   padding: 40px;
-  background: white;
+  background: #132238;
   border-radius: 10px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(64, 158, 255, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .login-header {
@@ -208,12 +209,12 @@ const handleEmailLogin = async () => {
 
 .login-header h2 {
   font-size: 28px;
-  color: #333;
+  color: #e2e8f0;
   margin-bottom: 10px;
 }
 
 .login-header p {
-  color: #666;
+  color: #8899aa;
   font-size: 14px;
 }
 

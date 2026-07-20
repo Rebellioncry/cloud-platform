@@ -1,0 +1,350 @@
+/* ===== Element Plus Dark Theme ===== */
+
+html.dark {
+  /* -- Backgrounds -- */
+  --el-bg-color: #0f1d2e;
+  --el-bg-color-page: #0a1628;
+  --el-bg-color-overlay: #132238;
+  --el-bg-color-soft: #1a2d44;
+  --el-bg-color-hover: #1e3350;
+
+  /* -- Text -- */
+  --el-text-color-primary: #e2e8f0;
+  --el-text-color-regular: #c8d6e5;
+  --el-text-color-secondary: #8899aa;
+  --el-text-color-placeholder: #5a6d80;
+  --el-text-color-disabled: #4a5568;
+
+  /* -- Borders -- */
+  --el-border-color: #1e3350;
+  --el-border-color-light: #1a2d44;
+  --el-border-color-lighter: #162640;
+  --el-border-color-extra-light: #132038;
+  --el-border-color-dark: #2a4060;
+  --el-border-color-darker: #3a5070;
+
+  /* -- Fill -- */
+  --el-fill-color: #1a2d44;
+  --el-fill-color-light: #162640;
+  --el-fill-color-lighter: #132038;
+  --el-fill-color-extra-light: #101c30;
+  --el-fill-color-dark: #1e3350;
+  --el-fill-color-blank: #0f1d2e;
+
+  /* -- Box Shadow -- */
+  --el-box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --el-box-shadow-light: 0 3px 12px rgba(0, 0, 0, 0.25);
+  --el-box-shadow-lighter: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  /* -- Mask -- */
+  --el-mask-color: rgba(6, 14, 26, 0.7);
+  --el-mask-color-extra-light: rgba(6, 14, 26, 0.3);
+}
+
+/* ===== Table ===== */
+html.dark .el-table {
+  --el-table-bg-color: #0f1d2e;
+  --el-table-tr-bg-color: #0f1d2e;
+  --el-table-header-bg-color: #132238;
+  --el-table-header-text-color: #c8d6e5;
+  --el-table-text-color: #c8d6e5;
+  --el-table-border-color: #1e3350;
+  --el-table-row-hover-bg-color: #1a2d44;
+  --el-table-current-row-bg-color: rgba(64, 158, 255, 0.1);
+  --el-table-expanded-cell-bg-color: #0f1d2e;
+  --el-table-fixed-left-patch: #132238;
+  --el-table-fixed-right-patch: #132238;
+}
+
+html.dark .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background: #132238;
+}
+
+html.dark .el-table--border .el-table__inner-wrapper::after,
+html.dark .el-table--border::before,
+html.dark .el-table--border::after {
+  background-color: #1e3350;
+}
+
+/* ===== Card ===== */
+html.dark .el-card {
+  --el-card-bg-color: #0f1d2e;
+  --el-card-border-color: #1e3350;
+  color: #e2e8f0;
+}
+
+html.dark .el-card__header {
+  border-bottom-color: #1e3350;
+}
+
+/* ===== Dialog ===== */
+html.dark .el-dialog {
+  --el-dialog-bg-color: #132238;
+  --el-dialog-title-font-size: 16px;
+  border: 1px solid #1e3350;
+}
+
+html.dark .el-dialog__title {
+  color: #e2e8f0;
+}
+
+html.dark .el-dialog__header {
+  border-bottom: 1px solid #1e3350;
+}
+
+html.dark .el-overlay {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* ===== Form ===== */
+html.dark .el-form-item__label {
+  color: #c8d6e5;
+}
+
+html.dark .el-input__wrapper,
+html.dark .el-textarea__inner {
+  background-color: #0a1628;
+  border-color: #1e3350;
+  box-shadow: 0 0 0 1px #1e3350 inset;
+  color: #e2e8f0;
+}
+
+html.dark .el-input__wrapper:hover,
+html.dark .el-textarea__inner:hover {
+  border-color: #2a4060;
+  box-shadow: 0 0 0 1px #2a4060 inset;
+}
+
+html.dark .el-input__wrapper.is-focus,
+html.dark .el-textarea__inner:focus {
+  border-color: #409eff;
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+html.dark .el-input__inner,
+html.dark .el-textarea__inner {
+  color: #e2e8f0;
+}
+
+html.dark .el-input__inner::placeholder {
+  color: #5a6d80;
+}
+
+html.dark .el-select .el-input__wrapper {
+  background-color: #0a1628;
+}
+
+/* ===== Select Dropdown ===== */
+html.dark .el-select-dropdown {
+  background-color: #132238;
+  border-color: #1e3350;
+}
+
+html.dark .el-select-dropdown__item {
+  color: #c8d6e5;
+}
+
+html.dark .el-select-dropdown__item.hover,
+html.dark .el-select-dropdown__item:hover {
+  background-color: #1a2d44;
+}
+
+html.dark .el-select-dropdown__item.selected {
+  color: #409eff;
+  background-color: rgba(64, 158, 255, 0.1);
+}
+
+/* ===== Popper / Dropdown ===== */
+html.dark .el-popper.is-light {
+  background-color: #132238;
+  border-color: #1e3350;
+}
+
+html.dark .el-dropdown-menu {
+  background-color: #132238;
+  border-color: #1e3350;
+}
+
+html.dark .el-dropdown-menu__item {
+  color: #c8d6e5;
+}
+
+html.dark .el-dropdown-menu__item:hover {
+  background-color: #1a2d44;
+  color: #409eff;
+}
+
+/* ===== Pagination ===== */
+html.dark .el-pagination {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-text-color: #c8d6e5;
+  --el-pagination-button-color: #c8d6e5;
+  --el-pagination-button-bg-color: #132238;
+  --el-pagination-hover-color: #409eff;
+}
+
+html.dark .el-pager li {
+  background-color: #132238;
+  color: #c8d6e5;
+}
+
+html.dark .el-pager li.is-active {
+  color: #409eff;
+}
+
+html.dark .el-pagination button {
+  background-color: #132238;
+  color: #c8d6e5;
+}
+
+html.dark .el-pagination button:disabled {
+  background-color: #0f1d2e;
+  color: #4a5568;
+}
+
+/* ===== Tabs ===== */
+html.dark .el-tabs {
+  --el-tabs-header-height: 40px;
+}
+
+html.dark .el-tabs__header {
+  margin-bottom: 16px;
+}
+
+html.dark .el-tabs__item {
+  color: #8899aa;
+}
+
+html.dark .el-tabs__item.is-active {
+  color: #409eff;
+}
+
+html.dark .el-tabs__active-bar {
+  background-color: #409eff;
+}
+
+html.dark .el-tabs__nav-wrap::after {
+  background-color: #1e3350;
+}
+
+/* ===== Tag ===== */
+html.dark .el-tag {
+  border-color: transparent;
+}
+
+/* ===== Breadcrumb ===== */
+html.dark .el-breadcrumb__inner {
+  color: #8899aa;
+}
+
+/* ===== Descriptions ===== */
+html.dark .el-descriptions {
+  --el-descriptions-item-bordered-label-background: #132238;
+}
+
+html.dark .el-descriptions__cell {
+  background-color: #0f1d2e;
+  border-color: #1e3350;
+}
+
+html.dark .el-descriptions__label {
+  color: #8899aa;
+  background-color: #132238;
+}
+
+html.dark .el-descriptions__content {
+  color: #e2e8f0;
+}
+
+html.dark .el-descriptions__body {
+  background-color: #0f1d2e;
+}
+
+/* ===== Tree ===== */
+html.dark .el-tree {
+  background-color: #0f1d2e;
+  color: #c8d6e5;
+}
+
+html.dark .el-tree-node__content:hover {
+  background-color: #1a2d44;
+}
+
+html.dark .el-tree-node.is-current > .el-tree-node__content {
+  background-color: rgba(64, 158, 255, 0.1);
+}
+
+/* ===== Switch ===== */
+html.dark .el-switch__core {
+  background-color: #1e3350;
+}
+
+/* ===== Radio ===== */
+html.dark .el-radio {
+  --el-radio-text-color: #c8d6e5;
+  --el-radio-font-size: 14px;
+}
+
+/* ===== Checkbox ===== */
+html.dark .el-checkbox {
+  --el-checkbox-text-color: #c8d6e5;
+}
+
+/* ===== Date Picker ===== */
+html.dark .el-date-editor .el-input__wrapper {
+  background-color: #0a1628;
+}
+
+html.dark .el-range-input {
+  background-color: transparent;
+  color: #e2e8f0;
+}
+
+html.dark .el-range-separator {
+  color: #5a6d80;
+}
+
+html.dark .el-date-table td.today .el-date-table-cell__text {
+  color: #409eff;
+}
+
+html.dark .el-picker-panel {
+  background-color: #132238;
+  border-color: #1e3350;
+  color: #c8d6e5;
+}
+
+/* ===== Message Box ===== */
+html.dark .el-message-box {
+  --el-messagebox-title-color: #e2e8f0;
+  background-color: #132238;
+  border-color: #1e3350;
+}
+
+/* ===== Page Header ===== */
+html.dark .el-page-header {
+  color: #e2e8f0;
+}
+
+html.dark .el-page-header__title {
+  color: #e2e8f0;
+}
+
+html.dark .el-page-header__back {
+  color: #8899aa;
+}
+
+/* ===== Loading ===== */
+html.dark .el-loading-mask {
+  background-color: rgba(10, 22, 40, 0.7);
+}
+
+/* ===== Global body ===== */
+html.dark {
+  background-color: #0a1628;
+  color: #e2e8f0;
+}
+
+html.dark body {
+  background-color: #0a1628;
+}

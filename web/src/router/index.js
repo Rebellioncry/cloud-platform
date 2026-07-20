@@ -71,6 +71,18 @@ const routes = [
         name: 'IotMqtt',
         component: () => import('@/views/iot/MqttConfig.vue'),
         meta: { title: 'MQTT配置', icon: 'Connection' }
+      },
+      {
+        path: 'iot/rule',
+        name: 'IotRule',
+        component: () => import('@/views/iot/Rule.vue'),
+        meta: { title: '规则引擎', icon: 'Filter' }
+      },
+      {
+        path: 'iot/rule/:id/design',
+        name: 'IotRuleDesign',
+        component: () => import('@/views/iot/RuleEditor.vue'),
+        meta: { title: '规则设计', icon: 'Filter', hidden: true }
       }
     ]
   }

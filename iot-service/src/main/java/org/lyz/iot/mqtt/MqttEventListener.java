@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.lyz.iot.entity.IotMqttConfig;
-import org.lyz.iot.mapper.mysql.IotMqttConfigMapper;
+import org.lyz.iot.dao.IotMqttConfigDao;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.listener.ChannelTopic;
@@ -20,7 +20,7 @@ import jakarta.annotation.PostConstruct;
 public class MqttEventListener implements MessageListener {
 
     private final RedisMessageListenerContainer redisContainer;
-    private final IotMqttConfigMapper mqttConfigMapper;
+    private final IotMqttConfigDao mqttConfigDao;
     private final MqttClientManager mqttClientManager;
 
     @PostConstruct
@@ -49,7 +49,7 @@ public class MqttEventListener implements MessageListener {
             return;
         }
         try {
-            IotMqttConfig config = mqttConfigMapper.selectById(configId);
+            IotMqttConfig config = mqttConfigDao.getById(configId);
             if (config == null) {
                 log.warn("MQTT配置不存在: configId={}", configId);
                 return;

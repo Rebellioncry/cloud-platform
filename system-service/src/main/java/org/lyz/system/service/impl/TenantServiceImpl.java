@@ -8,7 +8,7 @@ import org.lyz.common.core.exception.BusinessException;
 import org.lyz.system.dto.TenantDTO;
 import org.lyz.system.entity.SysTenant;
 import org.lyz.common.core.result.PageResult;
-import org.lyz.system.mapper.SysTenantMapper;
+import org.lyz.system.dao.SysTenantDao;
 import org.lyz.system.service.TenantService;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -17,18 +17,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TenantServiceImpl implements TenantService {
 
-    private final SysTenantMapper tenantMapper;
+    private final SysTenantDao tenantDao;
 
     @Override
     public PageResult<SysTenant> list(int page, int size) {
         Page<SysTenant> pageParam = new Page<>(page, size);
-        IPage<SysTenant> result = tenantMapper.selectPage(pageParam, new LambdaQueryWrapper<>());
+        IPage<SysTenant> result = tenantDao.page(pageParam, new LambdaQueryWrapper<>());
         return PageResult.of(result.getTotal(), page, size, result.getRecords());
     }
 
     @Override
     public TenantDTO getById(String id) {
-        SysTenant tenant = tenantMapper.selectById(id);
+        SysTenant tenant = tenantDao.getById(id);
         if (tenant == null) {
             throw new BusinessException("租户不存在");
         }
@@ -39,11 +39,11 @@ public class TenantServiceImpl implements TenantService {
     public void create(TenantDTO dto) {
         LambdaQueryWrapper<SysTenant> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysTenant::getTenantCode, dto.getTenantCode());
-        if (tenantMapper.selectCount(wrapper) > 0) {
+        if (tenantDao.count(wrapper) > 0) {
             throw new BusinessException("租户编码已存在");
         }
         SysTenant tenant = toEntity(dto);
-        tenantMapper.insert(tenant);
+        tenantDao.save(tenant);
     }
 
     @Override
@@ -52,12 +52,12 @@ public class TenantServiceImpl implements TenantService {
             throw new BusinessException("租户ID不能为空");
         }
         SysTenant tenant = toEntity(dto);
-        tenantMapper.updateById(tenant);
+        tenantDao.updateById(tenant);
     }
 
     @Override
     public void delete(String id) {
-        tenantMapper.deleteById(id);
+        tenantDao.removeById(id);
     }
 
     private TenantDTO toDTO(SysTenant tenant) {

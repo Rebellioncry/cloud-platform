@@ -16,5 +16,4 @@ public interface ProductService {
     List<ProductTreeDTO> getTree();
     String getThingModel(String id);
     void updateThingModel(String id, String thingModel);
-    void publishThingModel(String id);
 }

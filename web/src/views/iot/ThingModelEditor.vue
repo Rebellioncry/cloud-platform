@@ -95,7 +95,7 @@
     </div>
 
     <div v-else class="json-editor">
-      <el-input v-model="jsonText" type="textarea" :rows="22" placeholder="请输入物模型JSON（阿里云IoT TSL格式）" />
+      <div ref="editorRef" class="codemirror-container"></div>
     </div>
 
     <!-- 属性编辑弹窗 -->
@@ -181,7 +181,7 @@
             <el-button size="small" @click="propForm.dataType.specs.fields.push({ identifier: '', name: '', dataType: 'int32' })">
               + 添加字段
             </el-button>
-            <div style="color: #909399; font-size: 12px; margin-top: 4px">结构体内不支持嵌套 struct</div>
+            <div style="color: #5a6d80; font-size: 12px; margin-top: 4px">结构体内不支持嵌套 struct</div>
           </el-form-item>
         </template>
 
@@ -330,9 +330,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, onBeforeUnmount, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
+import { EditorView, basicSetup } from 'codemirror'
+import { json } from '@codemirror/lang-json'
+import { oneDark } from '@codemirror/theme-one-dark'
 
 const props = defineProps({
   modelValue: { type: String, default: '' }
@@ -344,6 +347,8 @@ const activeTab = ref('properties')
 const showJson = ref(false)
 const jsonText = ref('')
 const editingIndex = ref(-1)
+const editorRef = ref(null)
+let editorView = null
 
 const model = reactive({
   properties: [],
@@ -443,8 +448,34 @@ watch(() => props.modelValue, (val) => {
 }, { immediate: true })
 
 function switchToJson() {
-  jsonText.value = toModel()
+  jsonText.value = JSON.stringify(JSON.parse(toModel() || '{}'), null, 2)
   showJson.value = true
+  if (editorRef.value) {
+    nextTick(() => initEditor())
+  }
+}
+
+function initEditor() {
+  if (editorView) {
+    editorView.destroy()
+  }
+  const updateListener = EditorView.updateListener.of((update) => {
+    if (update.docChanged) {
+      jsonText.value = update.state.doc.toString()
+    }
+  })
+  editorView = new EditorView({
+    doc: jsonText.value,
+    extensions: [basicSetup, json(), oneDark, updateListener],
+    parent: editorRef.value
+  })
+}
+
+function destroyEditor() {
+  if (editorView) {
+    editorView.destroy()
+    editorView = null
+  }
 }
 
 function syncToParent() {
@@ -561,6 +592,10 @@ function saveEvent() {
 }
 
 defineExpose({ toModel, fromJson })
+
+onBeforeUnmount(() => {
+  destroyEditor()
+})
 </script>
 
 <style scoped>
@@ -568,4 +603,7 @@ defineExpose({ toModel, fromJson })
 .editor-header { margin-bottom: 12px; }
 .tab-toolbar { margin-bottom: 10px; }
 .json-editor { min-height: 400px; }
+.codemirror-container { height: 450px; border: 1px solid #1e3350; border-radius: 4px; overflow: hidden; }
+.codemirror-container :deep(.cm-editor) { height: 100%; }
+.codemirror-container :deep(.cm-scroller) { font-family: 'Consolas', 'Monaco', monospace; font-size: 14px; }
 </style>

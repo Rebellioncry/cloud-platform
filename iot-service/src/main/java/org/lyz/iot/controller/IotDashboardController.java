@@ -8,12 +8,16 @@ import org.lyz.common.core.result.Result;
 import org.lyz.iot.dto.IotDashboardDTO;
 import org.lyz.iot.entity.IotDevice;
 import org.lyz.iot.entity.IotProduct;
-import org.lyz.iot.mapper.mysql.IotDeviceMapper;
-import org.lyz.iot.mapper.mysql.IotProductMapper;
+import org.lyz.iot.dao.IotDeviceDao;
+import org.lyz.iot.dao.IotProductDao;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,19 +29,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class IotDashboardController {
 
-    private final IotProductMapper productMapper;
-    private final IotDeviceMapper deviceMapper;
+    private final IotProductDao productDao;
+    private final IotDeviceDao deviceDao;
 
     @Operation(summary = "看板概览数据")
     @GetMapping("/overview")
     public Result<IotDashboardDTO> overview() {
         IotDashboardDTO dto = new IotDashboardDTO();
 
-        dto.setProductCount(productMapper.selectCount(
+        dto.setProductCount(productDao.count(
                 new LambdaQueryWrapper<IotProduct>()
                         .eq(IotProduct::getDeleted, 0)));
 
-        List<IotDevice> devices = deviceMapper.selectList(
+        List<IotDevice> devices = deviceDao.list(
                 new LambdaQueryWrapper<IotDevice>()
                         .eq(IotDevice::getDeleted, 0));
 
@@ -56,11 +60,29 @@ public class IotDashboardController {
             stat.setProductId(entry.getKey());
             stat.setDeviceCount(entry.getValue());
 
-            IotProduct product = productMapper.selectById(entry.getKey());
+            IotProduct product = productDao.getById(entry.getKey());
             stat.setProductName(product != null ? product.getName() : entry.getKey());
             stats.add(stat);
         }
         dto.setProductDeviceStats(stats);
+
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MM-dd");
+        List<IotDashboardDTO.DailyStat> trend = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate day = today.minusDays(i);
+            LocalDateTime start = day.atStartOfDay();
+            LocalDateTime end = day.atTime(LocalTime.MAX);
+            long count = deviceDao.count(
+                    new LambdaQueryWrapper<IotDevice>()
+                            .eq(IotDevice::getDeleted, 0)
+                            .between(IotDevice::getCreateTime, start, end));
+            IotDashboardDTO.DailyStat ds = new IotDashboardDTO.DailyStat();
+            ds.setDate(day.format(fmt));
+            ds.setCount(count);
+            trend.add(ds);
+        }
+        dto.setDeviceTrend(trend);
 
         return Result.success(dto);
     }

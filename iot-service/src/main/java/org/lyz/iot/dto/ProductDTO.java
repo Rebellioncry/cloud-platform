@@ -36,7 +36,7 @@ public class ProductDTO {
     @Schema(description = "物模型(TSL JSON)")
     private String thingModel;
 
-    @Schema(description = "物模型状态(0草稿1发布2停用)")
+    @Schema(description = "物模型状态(0正常 1禁用)")
     private Integer modelStatus;
 
     @Schema(description = "状态")

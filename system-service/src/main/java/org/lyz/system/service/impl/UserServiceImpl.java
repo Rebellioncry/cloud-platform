@@ -11,9 +11,9 @@ import org.lyz.common.core.entity.SysUser;
 import org.lyz.common.core.result.PageResult;
 import org.lyz.system.entity.SysTenant;
 import org.lyz.system.entity.SysUserRole;
-import org.lyz.system.mapper.SysTenantMapper;
-import org.lyz.system.mapper.SysUserMapper;
-import org.lyz.system.mapper.SysUserRoleMapper;
+import org.lyz.system.dao.SysTenantDao;
+import org.lyz.system.dao.SysUserDao;
+import org.lyz.system.dao.SysUserRoleDao;
 import org.lyz.system.service.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,22 +27,22 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final SysUserMapper userMapper;
-    private final SysUserRoleMapper userRoleMapper;
-    private final SysTenantMapper tenantMapper;
+    private final SysUserDao userDao;
+    private final SysUserRoleDao userRoleDao;
+    private final SysTenantDao tenantDao;
 
     @Override
     public PageResult<UserDTO> list(int page, int size) {
         Page<SysUser> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByDesc(SysUser::getCreateTime);
-        IPage<SysUser> result = userMapper.selectPage(pageParam, wrapper);
+        IPage<SysUser> result = userDao.page(pageParam, wrapper);
 
         List<SysUser> users = result.getRecords();
         Set<String> tenantIds = users.stream().map(SysUser::getTenantId).collect(Collectors.toSet());
         Map<String, String> tenantNameMap = Map.of();
         if (!tenantIds.isEmpty()) {
-            List<SysTenant> tenants = tenantMapper.selectBatchIds(tenantIds);
+            List<SysTenant> tenants = tenantDao.listByIds(tenantIds);
             tenantNameMap = tenants.stream().collect(Collectors.toMap(SysTenant::getId, SysTenant::getTenantName));
         }
         final Map<String, String> tnMap = tenantNameMap;
@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
         if (!userIds.isEmpty()) {
             LambdaQueryWrapper<SysUserRole> roleWrapper = new LambdaQueryWrapper<>();
             roleWrapper.in(SysUserRole::getUserId, userIds);
-            List<SysUserRole> allUserRoles = userRoleMapper.selectList(roleWrapper);
+            List<SysUserRole> allUserRoles = userRoleDao.list(roleWrapper);
             for (SysUserRole ur : allUserRoles) {
                 userRoleMap.computeIfAbsent(ur.getUserId(), k -> new ArrayList<>()).add(ur.getRoleId());
             }
@@ -70,14 +70,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO getById(String id) {
-        SysUser user = userMapper.selectById(id);
+        SysUser user = userDao.getById(id);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
         UserDTO dto = toDTO(user);
         LambdaQueryWrapper<SysUserRole> roleWrapper = new LambdaQueryWrapper<>();
         roleWrapper.eq(SysUserRole::getUserId, id);
-        List<SysUserRole> userRoles = userRoleMapper.selectList(roleWrapper);
+        List<SysUserRole> userRoles = userRoleDao.list(roleWrapper);
         dto.setRoleIds(userRoles.stream().map(SysUserRole::getRoleId).collect(Collectors.toList()));
         return dto;
     }
@@ -87,12 +87,12 @@ public class UserServiceImpl implements UserService {
     public void create(UserDTO dto) {
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysUser::getUsername, dto.getUsername());
-        if (userMapper.selectCount(wrapper) > 0) {
+        if (userDao.count(wrapper) > 0) {
             throw new BusinessException("用户名已存在");
         }
 
         SysUser user = toEntity(dto);
-        userMapper.insert(user);
+        userDao.save(user);
 
         if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {
             saveUserRoles(user.getId(), dto.getRoleIds());
@@ -109,10 +109,10 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("不允许修改超级管理员");
         }
         SysUser user = toEntity(dto);
-        userMapper.updateById(user);
+        userDao.updateById(user);
 
         if (dto.getRoleIds() != null) {
-            userMapper.deleteUserRoles(dto.getId());
+            userDao.deleteUserRoles(dto.getId());
             if (!dto.getRoleIds().isEmpty()) {
                 saveUserRoles(dto.getId(), dto.getRoleIds());
             }
@@ -124,8 +124,8 @@ public class UserServiceImpl implements UserService {
         if ("2".equals(id)) {
             throw new BusinessException("不允许删除超级管理员");
         }
-        userMapper.deleteById(id);
-        userMapper.deleteUserRoles(id);
+        userDao.removeById(id);
+        userDao.deleteUserRoles(id);
     }
 
     @Override
@@ -136,7 +136,7 @@ public class UserServiceImpl implements UserService {
         LambdaUpdateWrapper<SysUser> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(SysUser::getId, id)
                .set(SysUser::getPassword, password);
-        userMapper.update(null, wrapper);
+        userDao.update(null, wrapper);
     }
 
     @Override
@@ -145,7 +145,7 @@ public class UserServiceImpl implements UserService {
         if ("2".equals(userId)) {
             throw new BusinessException("不允许修改超级管理员角色");
         }
-        userMapper.deleteUserRoles(userId);
+        userDao.deleteUserRoles(userId);
         if (roleIds != null && !roleIds.isEmpty()) {
             saveUserRoles(userId, roleIds);
         }
@@ -159,7 +159,7 @@ public class UserServiceImpl implements UserService {
             userRole.setRoleId(roleId);
             userRoles.add(userRole);
         }
-        userRoleMapper.insertBatchSomeColumn(userRoles);
+        userRoleDao.insertBatchSomeColumn(userRoles);
     }
 
     private UserDTO toDTO(SysUser user) {

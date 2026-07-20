@@ -31,17 +31,48 @@ public class DeviceStatusDTO {
     @Schema(description = "属性最新值(key=属性标识符, value=最新值)")
     private Map<String, PropertyLatest> properties;
 
+    @Schema(description = "事件最新数据(key=事件标识符)")
+    private Map<String, EventLatest> events;
+
     @Data
     @Schema(description = "属性最新值")
     public static class PropertyLatest {
         @Schema(description = "属性标识符")
         private String identifier;
 
+        @Schema(description = "属性名称")
+        private String name;
+
         @Schema(description = "属性值")
         private String value;
 
         @Schema(description = "值类型")
         private String valueType;
+
+        @Schema(description = "数据类型")
+        private String dataType;
+
+        @Schema(description = "访问模式")
+        private String accessMode;
+
+        @Schema(description = "上报时间")
+        private LocalDateTime timestamp;
+    }
+
+    @Data
+    @Schema(description = "事件最新数据")
+    public static class EventLatest {
+        @Schema(description = "事件标识符")
+        private String identifier;
+
+        @Schema(description = "事件名称")
+        private String name;
+
+        @Schema(description = "事件类型(info/alert/error)")
+        private String eventType;
+
+        @Schema(description = "输出参数值(JSON)")
+        private String outputValues;
 
         @Schema(description = "上报时间")
         private LocalDateTime timestamp;

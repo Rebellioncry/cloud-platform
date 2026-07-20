@@ -12,8 +12,8 @@ import me.zhyd.oauth.request.AuthDingTalkRequest;
 import me.zhyd.oauth.utils.AuthStateUtils;
 import org.lyz.auth.entity.SysSocial;
 import org.lyz.common.core.entity.SysUser;
-import org.lyz.auth.mapper.SysSocialMapper;
-import org.lyz.auth.mapper.SysUserMapper;
+import org.lyz.auth.dao.SysSocialDao;
+import org.lyz.auth.dao.SysUserDao;
 import org.lyz.auth.service.SocialService;
 import org.lyz.common.core.context.UserContext;
 import org.lyz.common.core.exception.BusinessException;
@@ -31,14 +31,14 @@ import java.util.Map;
 public class SocialServiceImpl implements SocialService {
 
     private final StringRedisTemplate redisTemplate;
-    private final SysUserMapper sysUserMapper;
-    private final SysSocialMapper sysSocialMapper;
+    private final SysUserDao sysUserDao;
+    private final SysSocialDao sysSocialDao;
     private final Map<String, AuthRequest> authRequestMap = new HashMap<>();
 
-    public SocialServiceImpl(StringRedisTemplate redisTemplate, SysUserMapper sysUserMapper, SysSocialMapper sysSocialMapper) {
+    public SocialServiceImpl(StringRedisTemplate redisTemplate, SysUserDao sysUserDao, SysSocialDao sysSocialDao) {
         this.redisTemplate = redisTemplate;
-        this.sysUserMapper = sysUserMapper;
-        this.sysSocialMapper = sysSocialMapper;
+        this.sysUserDao = sysUserDao;
+        this.sysSocialDao = sysSocialDao;
     }
 
     @PostConstruct
@@ -94,10 +94,10 @@ public class SocialServiceImpl implements SocialService {
                .eq(SysSocial::getOpenid, authUser.getUuid())
                .eq(SysSocial::getTenantId, tenantId);
 
-        SysSocial social = sysSocialMapper.selectOne(wrapper);
+        SysSocial social = sysSocialDao.getOne(wrapper);
 
         if (social != null) {
-            SysUser user = sysUserMapper.selectById(social.getUserId());
+            SysUser user = sysUserDao.getById(social.getUserId());
             if (user != null && user.getStatus() == 1) {
                 StpUtil.login(user.getId());
                 log.info("第三方登录成功(绑定用户): {}", authUser.getUsername());
@@ -112,7 +112,7 @@ public class SocialServiceImpl implements SocialService {
                 .avatar(authUser.getAvatar())
                 .status(1)
                 .build();
-        sysUserMapper.insert(newUser);
+        sysUserDao.save(newUser);
 
         SysSocial newSocial = SysSocial.builder()
                 .userId(newUser.getId())
@@ -122,7 +122,7 @@ public class SocialServiceImpl implements SocialService {
                 .nickname(authUser.getNickname())
                 .avatar(authUser.getAvatar())
                 .build();
-        sysSocialMapper.insert(newSocial);
+        sysSocialDao.save(newSocial);
 
         StpUtil.login(newUser.getId());
         log.info("第三方登录成功(新用户): {}", authUser.getUsername());

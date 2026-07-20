@@ -6,7 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.iot.dto.DeviceShadowDTO;
 import org.lyz.iot.entity.IotDeviceShadow;
-import org.lyz.iot.mapper.mysql.IotDeviceShadowMapper;
+import org.lyz.common.config.TenantIgnore;
+import org.lyz.iot.dao.IotDeviceShadowDao;
 import org.lyz.iot.service.DeviceShadowService;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -23,17 +24,18 @@ public class DeviceShadowServiceImpl implements DeviceShadowService {
 
     private static final int MAX_RETRY = 3;
 
-    private final IotDeviceShadowMapper shadowMapper;
+    private final IotDeviceShadowDao shadowDao;
 
     @Override
     public List<DeviceShadowDTO> getShadow(String deviceId) {
         LambdaQueryWrapper<IotDeviceShadow> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(IotDeviceShadow::getDeviceId, deviceId);
-        List<IotDeviceShadow> shadows = shadowMapper.selectList(wrapper);
+        List<IotDeviceShadow> shadows = shadowDao.list(wrapper);
         return shadows.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     @Override
+    @TenantIgnore
     @Transactional
     public void updateDesired(String deviceId, String identifier, String value) {
         for (int i = 0; i < MAX_RETRY; i++) {
@@ -42,8 +44,8 @@ public class DeviceShadowServiceImpl implements DeviceShadowService {
             shadow.setDesiredVersion(shadow.getDesiredVersion() + 1);
             shadow.setDesiredTime(LocalDateTime.now());
             shadow.setUpdateTime(LocalDateTime.now());
-            int rows = shadowMapper.updateById(shadow);
-            if (rows > 0) {
+            boolean success = shadowDao.updateById(shadow);
+            if (success) {
                 log.info("设备影子期望值更新: deviceId={}, identifier={}, version={}",
                         deviceId, identifier, shadow.getDesiredVersion());
                 return;
@@ -54,6 +56,7 @@ public class DeviceShadowServiceImpl implements DeviceShadowService {
     }
 
     @Override
+    @TenantIgnore
     @Transactional
     public void updateReported(String deviceId, String identifier, String value) {
         for (int i = 0; i < MAX_RETRY; i++) {
@@ -62,8 +65,8 @@ public class DeviceShadowServiceImpl implements DeviceShadowService {
             shadow.setReportedVersion(shadow.getReportedVersion() + 1);
             shadow.setReportedTime(LocalDateTime.now());
             shadow.setUpdateTime(LocalDateTime.now());
-            int rows = shadowMapper.updateById(shadow);
-            if (rows > 0) {
+            boolean success = shadowDao.updateById(shadow);
+            if (success) {
                 log.info("设备影子上报值更新: deviceId={}, identifier={}, version={}",
                         deviceId, identifier, shadow.getReportedVersion());
                 return;
@@ -77,7 +80,7 @@ public class DeviceShadowServiceImpl implements DeviceShadowService {
     public List<DeviceShadowDTO> getDiff(String deviceId) {
         LambdaQueryWrapper<IotDeviceShadow> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(IotDeviceShadow::getDeviceId, deviceId);
-        List<IotDeviceShadow> shadows = shadowMapper.selectList(wrapper);
+        List<IotDeviceShadow> shadows = shadowDao.list(wrapper);
         return shadows.stream()
                 .filter(s -> {
                     if (s.getDesiredValue() == null || s.getReportedValue() == null) return false;
@@ -91,7 +94,7 @@ public class DeviceShadowServiceImpl implements DeviceShadowService {
         LambdaQueryWrapper<IotDeviceShadow> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(IotDeviceShadow::getDeviceId, deviceId);
         wrapper.eq(IotDeviceShadow::getPropertyIdentifier, identifier);
-        IotDeviceShadow shadow = shadowMapper.selectOne(wrapper);
+        IotDeviceShadow shadow = shadowDao.getOne(wrapper);
         if (shadow == null) {
             shadow = new IotDeviceShadow();
             shadow.setDeviceId(deviceId);
@@ -102,10 +105,10 @@ public class DeviceShadowServiceImpl implements DeviceShadowService {
             shadow.setCreateTime(LocalDateTime.now());
             shadow.setUpdateTime(LocalDateTime.now());
             try {
-                shadowMapper.insert(shadow);
+                shadowDao.save(shadow);
             } catch (DuplicateKeyException e) {
                 // 并发插入冲突，重新查询
-                shadow = shadowMapper.selectOne(wrapper);
+                shadow = shadowDao.getOne(wrapper);
             }
         }
         return shadow;

@@ -1,6 +1,7 @@
 package org.lyz.iot.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
@@ -10,8 +11,8 @@ import org.lyz.iot.dto.ProductDTO;
 import org.lyz.iot.dto.ProductTreeDTO;
 import org.lyz.iot.entity.IotDevice;
 import org.lyz.iot.entity.IotProduct;
-import org.lyz.iot.mapper.mysql.IotDeviceMapper;
-import org.lyz.iot.mapper.mysql.IotProductMapper;
+import org.lyz.iot.dao.IotDeviceDao;
+import org.lyz.iot.dao.IotProductDao;
 import org.lyz.iot.service.ProductService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,8 +25,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private final IotProductMapper productMapper;
-    private final IotDeviceMapper deviceMapper;
+    private final IotProductDao productDao;
+    private final IotDeviceDao deviceDao;
 
     @Override
     public PageResult<IotProduct> list(int page, int size, String name) {
@@ -35,13 +36,13 @@ public class ProductServiceImpl implements ProductService {
             wrapper.like(IotProduct::getName, name);
         }
         wrapper.orderByDesc(IotProduct::getCreateTime);
-        IPage<IotProduct> result = productMapper.selectPage(pageParam, wrapper);
+        IPage<IotProduct> result = productDao.page(pageParam, wrapper);
         return PageResult.of(result.getTotal(), page, size, result.getRecords());
     }
 
     @Override
     public IotProduct getById(String id) {
-        IotProduct product = productMapper.selectById(id);
+        IotProduct product = productDao.getById(id);
         if (product == null) {
             throw new BusinessException("产品不存在");
         }
@@ -62,7 +63,7 @@ public class ProductServiceImpl implements ProductService {
         product.setDataFormat(dto.getDataFormat() != null ? dto.getDataFormat() : 0);
         product.setModelStatus(0);
         product.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
-        productMapper.insert(product);
+        productDao.save(product);
         return product;
     }
 
@@ -71,7 +72,7 @@ public class ProductServiceImpl implements ProductService {
     public void update(String id, ProductDTO dto) {
         IotProduct product = getById(id);
         if (dto.getProductKey() != null && !dto.getProductKey().equals(product.getProductKey())) {
-            long count = deviceMapper.selectCount(
+            long count = deviceDao.count(
                     new LambdaQueryWrapper<IotDevice>().eq(IotDevice::getProductId, id));
             if (count > 0) {
                 throw new BusinessException("该产品下存在设备，无法修改产品密钥");
@@ -82,21 +83,41 @@ public class ProductServiceImpl implements ProductService {
         if (dto.getDescription() != null) product.setDescription(dto.getDescription());
         if (dto.getNodeType() != null) product.setNodeType(dto.getNodeType());
         if (dto.getProtocol() != null) product.setProtocol(dto.getProtocol());
-        if (dto.getStatus() != null) product.setStatus(dto.getStatus());
-        productMapper.updateById(product);
+        if (dto.getStatus() != null) {
+            boolean wasEnabled = product.getStatus() != null && product.getStatus() == 1;
+            boolean nowDisabled = dto.getStatus() == 0;
+            product.setStatus(dto.getStatus());
+            if (wasEnabled && nowDisabled) {
+                deviceDao.update(null,
+                    new LambdaUpdateWrapper<IotDevice>()
+                        .eq(IotDevice::getProductId, id)
+                        .ne(IotDevice::getStatus, 3)
+                        .set(IotDevice::getStatus, 3));
+            }
+        }
+        productDao.updateById(product);
     }
 
     @Override
     @Transactional
     public void delete(String id) {
-        productMapper.deleteById(id);
+        IotProduct product = getById(id);
+        if (product.getStatus() != null && product.getStatus() == 1) {
+            throw new BusinessException("产品已启用，无法删除。请先禁用产品");
+        }
+        long deviceCount = deviceDao.count(
+                new LambdaQueryWrapper<IotDevice>().eq(IotDevice::getProductId, id));
+        if (deviceCount > 0) {
+            throw new BusinessException("该产品下存在 " + deviceCount + " 个设备，请先删除所有设备");
+        }
+        productDao.removeById(id);
     }
 
     @Override
     public List<ProductTreeDTO> getTree() {
         LambdaQueryWrapper<IotProduct> wrapper = new LambdaQueryWrapper<>();
         wrapper.orderByAsc(IotProduct::getCreateTime);
-        List<IotProduct> products = productMapper.selectList(wrapper);
+        List<IotProduct> products = productDao.list(wrapper);
         return buildTree(products, null);
     }
 
@@ -128,19 +149,7 @@ public class ProductServiceImpl implements ProductService {
     public void updateThingModel(String id, String thingModel) {
         IotProduct product = getById(id);
         product.setThingModel(thingModel);
-        product.setModelStatus(0);
-        productMapper.updateById(product);
-    }
-
-    @Override
-    @Transactional
-    public void publishThingModel(String id) {
-        IotProduct product = getById(id);
-        if (product.getThingModel() == null || product.getThingModel().isEmpty()) {
-            throw new BusinessException("物模型为空，无法发布");
-        }
-        product.setModelStatus(1);
-        productMapper.updateById(product);
+        productDao.updateById(product);
     }
 
     private String generateProductKey() {

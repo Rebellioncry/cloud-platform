@@ -9,9 +9,9 @@ import org.lyz.iot.dto.DeviceFunctionDTO;
 import org.lyz.iot.entity.IotDevice;
 import org.lyz.iot.entity.IotDeviceCommand;
 import org.lyz.iot.entity.IotProduct;
-import org.lyz.iot.mapper.mysql.IotDeviceCommandMapper;
-import org.lyz.iot.mapper.mysql.IotDeviceMapper;
-import org.lyz.iot.mapper.mysql.IotProductMapper;
+import org.lyz.iot.dao.IotDeviceCommandDao;
+import org.lyz.iot.dao.IotDeviceDao;
+import org.lyz.iot.dao.IotProductDao;
 import org.lyz.iot.mqtt.CommandEventPublisher;
 import org.lyz.iot.service.DeviceFunctionService;
 import org.springframework.stereotype.Service;
@@ -26,42 +26,25 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DeviceFunctionServiceImpl implements DeviceFunctionService {
 
-    private final IotDeviceMapper deviceMapper;
-    private final IotProductMapper productMapper;
-    private final IotDeviceCommandMapper commandMapper;
+    private final IotDeviceDao deviceDao;
+    private final IotProductDao productDao;
+    private final IotDeviceCommandDao commandDao;
     private final ObjectMapper objectMapper;
     private final CommandEventPublisher commandEventPublisher;
 
     @Override
     public List<DeviceFunctionDTO> listFunctions(String deviceId) {
-        IotDevice device = deviceMapper.selectById(deviceId);
+        IotDevice device = deviceDao.getById(deviceId);
         if (device == null) {
             throw new BusinessException("设备不存在");
         }
-        IotProduct product = productMapper.selectById(device.getProductId());
+        IotProduct product = productDao.getById(device.getProductId());
         List<DeviceFunctionDTO> functions = new ArrayList<>();
         if (product == null || product.getThingModel() == null) {
             return functions;
         }
         try {
             JsonNode root = objectMapper.readTree(product.getThingModel());
-
-            JsonNode propertiesNode = root.get("properties");
-            if (propertiesNode != null && propertiesNode.isArray()) {
-                for (JsonNode node : propertiesNode) {
-                    DeviceFunctionDTO dto = new DeviceFunctionDTO();
-                    dto.setIdentifier(node.get("identifier").asText());
-                    dto.setName(node.get("name").asText());
-                    dto.setType("property");
-                    dto.setAccessMode(node.has("accessMode") ? node.get("accessMode").asText() : "r");
-                    JsonNode dt = node.get("dataType");
-                    if (dt != null) {
-                        dto.setDataType(dt.has("type") ? dt.get("type").asText() : "");
-                        dto.setSpecs(dt.has("specs") ? dt.get("specs").toString() : "");
-                    }
-                    functions.add(dto);
-                }
-            }
 
             JsonNode servicesNode = root.get("services");
             if (servicesNode != null && servicesNode.isArray()) {
@@ -71,21 +54,7 @@ public class DeviceFunctionServiceImpl implements DeviceFunctionService {
                     dto.setName(node.get("name").asText());
                     dto.setType("service");
                     dto.setCallType(node.has("callType") ? node.get("callType").asText() : "async");
-                    JsonNode input = node.get("inputData");
-                    dto.setSpecs(input != null ? input.toString() : "");
-                    functions.add(dto);
-                }
-            }
-
-            JsonNode eventsNode = root.get("events");
-            if (eventsNode != null && eventsNode.isArray()) {
-                for (JsonNode node : eventsNode) {
-                    DeviceFunctionDTO dto = new DeviceFunctionDTO();
-                    dto.setIdentifier(node.get("identifier").asText());
-                    dto.setName(node.get("name").asText());
-                    dto.setType("event");
-                    JsonNode output = node.get("outputData");
-                    dto.setSpecs(output != null ? output.toString() : "");
+                    dto.setSpecs(node.has("inputData") ? node.get("inputData").toString() : "[]");
                     functions.add(dto);
                 }
             }
@@ -97,9 +66,12 @@ public class DeviceFunctionServiceImpl implements DeviceFunctionService {
 
     @Override
     public void invokeFunction(String deviceId, String identifier, String input) {
-        IotDevice device = deviceMapper.selectById(deviceId);
+        IotDevice device = deviceDao.getById(deviceId);
         if (device == null) {
             throw new BusinessException("设备不存在");
+        }
+        if (device.getStatus() != null && device.getStatus() == 3) {
+            throw new BusinessException("设备已禁用，无法调用功能");
         }
         IotDeviceCommand command = new IotDeviceCommand();
         command.setDeviceId(deviceId);
@@ -110,7 +82,7 @@ public class DeviceFunctionServiceImpl implements DeviceFunctionService {
         command.setRequestId(UUID.randomUUID().toString());
         command.setCreateTime(LocalDateTime.now());
         command.setUpdateTime(LocalDateTime.now());
-        commandMapper.insert(command);
+        commandDao.save(command);
 
         commandEventPublisher.publishCommand(command);
 

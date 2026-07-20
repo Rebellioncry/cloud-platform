@@ -10,11 +10,10 @@ import org.lyz.auth.dto.LoginRequest;
 import org.lyz.auth.dto.LoginResponse;
 import org.lyz.auth.dto.MenuTree;
 import org.lyz.auth.dto.UserInfo;
+import org.lyz.auth.dao.SysMenuDao;
+import org.lyz.auth.dao.SysRoleMenuDao;
+import org.lyz.auth.dao.SysUserDao;
 import org.lyz.auth.entity.SysMenu;
-import org.lyz.auth.entity.SysRoleMenu;
-import org.lyz.auth.mapper.SysMenuMapper;
-import org.lyz.auth.mapper.SysRoleMenuMapper;
-import org.lyz.auth.mapper.SysUserMapper;
 import org.lyz.auth.service.LoginService;
 import org.lyz.auth.service.VerificationService;
 import org.lyz.common.core.entity.SysUser;
@@ -31,9 +30,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LoginServiceImpl implements LoginService {
 
-    private final SysUserMapper sysUserMapper;
-    private final SysMenuMapper sysMenuMapper;
-    private final SysRoleMenuMapper sysRoleMenuMapper;
+    private final SysUserDao sysUserDao;
+    private final SysMenuDao sysMenuDao;
+    private final SysRoleMenuDao sysRoleMenuDao;
     private final VerificationService verificationService;
 
     @Override
@@ -48,13 +47,13 @@ public class LoginServiceImpl implements LoginService {
             wrapper.eq(SysUser::getTenantId, tenantId);
         }
         
-        SysUser user = sysUserMapper.selectOne(wrapper);
+        SysUser user = sysUserDao.getOne(wrapper);
 
         if (user == null && (tenantId == null || tenantId.isEmpty())) {
             wrapper.clear();
             wrapper.eq(SysUser::getUsername, request.getUsername())
                    .eq(SysUser::getStatus, 1);
-            user = sysUserMapper.selectOne(wrapper);
+            user = sysUserDao.getOne(wrapper);
         }
 
         if (user == null) {
@@ -145,12 +144,12 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public UserInfo getUserInfo() {
         String userId = StpUtil.getLoginIdAsString();
-        SysUser user = sysUserMapper.selectById(userId);
+        SysUser user = sysUserDao.getById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
 
-        List<String> roleCodes = sysUserMapper.selectRoleCodesByUserId(userId);
+        List<String> roleCodes = sysUserDao.selectRoleCodesByUserId(userId);
 
         return UserInfo.builder()
                 .userId(user.getId())
@@ -168,18 +167,18 @@ public class LoginServiceImpl implements LoginService {
     private List<MenuTree> getUserMenus() {
         String userId = StpUtil.getLoginIdAsString();
 
-        List<String> roleCodes = sysUserMapper.selectRoleCodesByUserId(userId);
+        List<String> roleCodes = sysUserDao.selectRoleCodesByUserId(userId);
         boolean superAdmin = roleCodes != null && roleCodes.contains("SUPER_ADMIN");
 
         if (superAdmin) {
-            List<SysMenu> menus = sysMenuMapper.selectList(
+            List<SysMenu> menus = sysMenuDao.list(
                     new LambdaQueryWrapper<SysMenu>()
                             .eq(SysMenu::getStatus, 1)
                             .orderByAsc(SysMenu::getOrderNum));
             return buildMenuTree(menus, "0");
         }
 
-        List<String> menuIds = sysMenuMapper.selectList(
+        List<String> menuIds = sysMenuDao.list(
                 new LambdaQueryWrapper<SysMenu>()
                         .select(SysMenu::getId)
                         .inSql(SysMenu::getId,
@@ -191,7 +190,7 @@ public class LoginServiceImpl implements LoginService {
             return Collections.emptyList();
         }
 
-        List<SysMenu> menus = sysMenuMapper.selectList(
+        List<SysMenu> menus = sysMenuDao.list(
                 new LambdaQueryWrapper<SysMenu>()
                         .eq(SysMenu::getStatus, 1)
                         .in(SysMenu::getId, menuIds)
@@ -223,8 +222,8 @@ public class LoginServiceImpl implements LoginService {
     }
 
     private void writeSessionData(String userId) {
-        List<String> roleCodes = sysUserMapper.selectRoleCodesByUserId(userId);
-        SysUser user = sysUserMapper.selectById(userId);
+        List<String> roleCodes = sysUserDao.selectRoleCodesByUserId(userId);
+        SysUser user = sysUserDao.getById(userId);
         StpUtil.getSession().set("roleCodes", roleCodes);
         if (user != null) {
             StpUtil.getSession().set("userId", userId);
@@ -252,7 +251,7 @@ public class LoginServiceImpl implements LoginService {
         } else if ("email".equalsIgnoreCase(type)) {
             wrapper.eq(SysUser::getEmail, target);
         }
-        return sysUserMapper.selectOne(wrapper);
+        return sysUserDao.getOne(wrapper);
     }
 
     private SysUser createAutoUser(String type, String target, String tenantId) {
@@ -268,7 +267,7 @@ public class LoginServiceImpl implements LoginService {
             user.setEmail(target);
             user.setNickname("邮箱用户");
         }
-        sysUserMapper.insert(user);
+        sysUserDao.save(user);
         log.info("验证码登录自动创建用户: {}", user.getUsername());
         return user;
     }

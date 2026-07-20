@@ -214,12 +214,12 @@ onMounted(() => loadData())
 .detail-title {
   font-size: 14px;
   font-weight: bold;
-  color: #333;
+  color: #e2e8f0;
   margin-bottom: 8px;
 }
 .detail-code {
-  background: #f5f7fa;
-  border: 1px solid #e4e7ed;
+  background: #0a1628;
+  border: 1px solid #1e3350;
   border-radius: 4px;
   padding: 12px;
   font-size: 12px;
@@ -228,10 +228,11 @@ onMounted(() => loadData())
   white-space: pre-wrap;
   word-break: break-all;
   margin: 0;
+  color: #c8d6e5;
 }
 .detail-code--error {
-  background: #fef0f0;
-  border-color: #fbc4c4;
+  background: rgba(245, 108, 108, 0.08);
+  border-color: rgba(245, 108, 108, 0.3);
   color: #F56C6C;
 }
 </style>
