@@ -18,6 +18,9 @@ public class IotOtaTaskDevice implements Serializable {
     @Schema(description = "主键ID")
     private String id;
 
+    @Schema(description = "租户ID")
+    private String tenantId;
+
     @Schema(description = "任务ID")
     private String taskId;
 

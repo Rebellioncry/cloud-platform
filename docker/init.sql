@@ -545,6 +545,7 @@ CREATE TABLE IF NOT EXISTS iot_ota_task (
 -- IoT OTA Task Device Table
 CREATE TABLE IF NOT EXISTS iot_ota_task_device (
     id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
     task_id VARCHAR(32) NOT NULL,
     device_id VARCHAR(32) NOT NULL,
     device_name VARCHAR(100) NOT NULL,
