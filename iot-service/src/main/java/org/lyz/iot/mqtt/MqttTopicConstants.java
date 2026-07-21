@@ -25,6 +25,17 @@ public class MqttTopicConstants {
     public static final String TOPIC_EVENT_REPORT_POST = SYS + "/+/+/" + THING + "/" + EVENT + "/" + PLUS + "/" + POST;
     public static final String TOPIC_SERVICE_REPLY = SYS + "/+/+/" + THING + "/" + SERVICE + "/" + PLUS + "/" + REPLY;
 
+    private static final String OTA = "ota";
+    private static final String DEVICE = "device";
+    private static final String INFORM = "inform";
+    private static final String UPGRADE = "upgrade";
+    private static final String PROGRESS = "progress";
+    private static final String DOWNLOAD = "download";
+
+    public static final String TOPIC_OTA_DEVICE_INFORM = OTA + "/device/inform/+/+";
+    public static final String TOPIC_OTA_DEVICE_PROGRESS = OTA + "/device/progress/+/+";
+    public static final String TOPIC_OTA_DEVICE_DOWNLOAD = OTA + "/device/download/+/+";
+
     public static String[] getSubscribeTopics(String group) {
         if (group == null || group.isEmpty()) {
             group = SHARE_GROUP_DEFAULT;
@@ -38,7 +49,10 @@ public class MqttTopicConstants {
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_PROPERTY_HISTORY_POST,
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_EVENT_PROPERTY_BATCH_POST,
                 SHARE_PREFIX + "/" + group + "/" + TOPIC_PROPERTY_BATCH_POST,
-                SHARE_PREFIX + "/" + group + "/" + TOPIC_SERVICE_REPLY
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_SERVICE_REPLY,
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_OTA_DEVICE_INFORM,
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_OTA_DEVICE_PROGRESS,
+                SHARE_PREFIX + "/" + group + "/" + TOPIC_OTA_DEVICE_DOWNLOAD
         };
     }
 
@@ -68,5 +82,21 @@ public class MqttTopicConstants {
 
     public static String buildEventPropertyPackPostTopic(String productKey, String deviceName) {
         return SYS + "/" + productKey + "/" + deviceName + "/" + THING + "/" + EVENT + "/" + PROPERTY + "/pack/" + POST;
+    }
+
+    public static String buildOtaUpgradeTopic(String productKey, String deviceName) {
+        return OTA + "/" + DEVICE + "/" + UPGRADE + "/" + productKey + "/" + deviceName;
+    }
+
+    public static String buildOtaDeviceInformTopic(String productKey, String deviceName) {
+        return OTA + "/" + DEVICE + "/" + INFORM + "/" + productKey + "/" + deviceName;
+    }
+
+    public static String buildOtaDeviceProgressTopic(String productKey, String deviceName) {
+        return OTA + "/" + DEVICE + "/" + PROGRESS + "/" + productKey + "/" + deviceName;
+    }
+
+    public static String buildOtaDeviceDownloadTopic(String productKey, String deviceName) {
+        return OTA + "/" + DEVICE + "/" + DOWNLOAD + "/" + productKey + "/" + deviceName;
     }
 }

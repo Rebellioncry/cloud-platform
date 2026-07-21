@@ -273,6 +273,9 @@ SET @menu_iot_product = '21';
 SET @menu_iot_device = '22';
 SET @menu_iot_mqtt = '23';
 SET @menu_iot_rule = '24';
+SET @menu_iot_storage = '25';
+SET @menu_iot_firmware = '26';
+SET @menu_iot_ota = '27';
 SET @menu_audit = '16';
 
 INSERT INTO sys_tenant (id, tenant_code, tenant_name, contact, mobile, email, status)
@@ -291,6 +294,9 @@ INSERT INTO sys_menu (id, tenant_id, parent_id, menu_type, menu_name, path, comp
 (@menu_iot_device, @tenant_id, @menu_iot, 1, '设备管理', '/iot/device', 'iot/device/index', 'Cpu', 'iot:device:list', 2),
 (@menu_iot_mqtt, @tenant_id, @menu_iot, 1, 'MQTT配置', '/iot/mqtt', 'iot/mqtt/index', 'Connection', 'iot:mqtt:list', 3),
 (@menu_iot_rule, @tenant_id, @menu_iot, 1, '规则引擎', '/iot/rule', 'iot/rule/index', 'Filter', 'iot:rule:list', 4),
+(@menu_iot_storage, @tenant_id, @menu_iot, 1, '文件存储', '/iot/storage', 'iot/storage/index', 'FolderOpened', 'iot:storage:list', 5),
+(@menu_iot_firmware, @tenant_id, @menu_iot, 1, '固件管理', '/iot/firmware', 'iot/firmware/index', 'Upload', 'iot:firmware:list', 6),
+(@menu_iot_ota, @tenant_id, @menu_iot, 1, 'OTA升级', '/iot/ota', 'iot/ota/index', 'Promotion', 'iot:ota:list', 7),
 (@menu_system, @tenant_id, '0', 0, '系统管理', '/system', NULL, 'Setting', '', 2),
 (@menu_user, @tenant_id, @menu_system, 1, '用户管理', '/system/user', 'system/user/index', 'User', 'system:user:list', 1),
 (@menu_role, @tenant_id, @menu_system, 1, '角色管理', '/system/role', 'system/role/index', 'UserFilled', 'system:role:list', 2),
@@ -308,6 +314,9 @@ INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES
 ('33', @admin_role_id, @menu_iot_device),
 ('34', @admin_role_id, @menu_iot_mqtt),
 ('41', @admin_role_id, @menu_iot_rule),
+('42', @admin_role_id, @menu_iot_storage),
+('43', @admin_role_id, @menu_iot_firmware),
+('44', @admin_role_id, @menu_iot_ota),
 ('35', @admin_role_id, @menu_system),
 ('36', @admin_role_id, @menu_user),
 ('37', @admin_role_id, @menu_role),
@@ -461,5 +470,96 @@ CREATE TABLE IF NOT EXISTS iot_mqtt_config (
     deleted TINYINT DEFAULT 0,
     version INT DEFAULT 0,
     PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- IoT File Storage Table
+CREATE TABLE IF NOT EXISTS iot_file_storage (
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    name VARCHAR(100) NOT NULL,
+    storage_type TINYINT NOT NULL COMMENT '0本地 1MinIO',
+    local_path VARCHAR(500) DEFAULT NULL,
+    endpoint VARCHAR(200) DEFAULT NULL,
+    access_key VARCHAR(200) DEFAULT NULL,
+    secret_key VARCHAR(200) DEFAULT NULL,
+    bucket VARCHAR(100) DEFAULT NULL,
+    region VARCHAR(50) DEFAULT NULL,
+    is_default TINYINT DEFAULT 0,
+    status TINYINT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- IoT Firmware Table
+CREATE TABLE IF NOT EXISTS iot_firmware (
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    product_id VARCHAR(32) NOT NULL,
+    product_key VARCHAR(20) NOT NULL,
+    firmware_name VARCHAR(200) NOT NULL,
+    firmware_version VARCHAR(50) NOT NULL,
+    description VARCHAR(1000) DEFAULT NULL,
+    storage_id VARCHAR(32) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_name VARCHAR(200) NOT NULL,
+    file_size BIGINT DEFAULT 0,
+    file_md5 VARCHAR(64) DEFAULT NULL,
+    signature VARCHAR(500) DEFAULT NULL,
+    status TINYINT DEFAULT 0 COMMENT '0未发布 1已发布 2已禁用',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
+    PRIMARY KEY (id),
+    KEY idx_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- IoT OTA Task Table
+CREATE TABLE IF NOT EXISTS iot_ota_task (
+    id VARCHAR(32) NOT NULL,
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    task_name VARCHAR(100) NOT NULL,
+    firmware_id VARCHAR(32) NOT NULL,
+    product_id VARCHAR(32) NOT NULL,
+    product_key VARCHAR(20) NOT NULL,
+    target_type TINYINT NOT NULL COMMENT '0产品全量 1指定设备 2按版本',
+    target_value TEXT DEFAULT NULL,
+    total_count INT DEFAULT 0,
+    success_count INT DEFAULT 0,
+    fail_count INT DEFAULT 0,
+    progress INT DEFAULT 0,
+    status TINYINT DEFAULT 0 COMMENT '0待执行 1执行中 2已完成 3已取消',
+    start_time DATETIME DEFAULT NULL,
+    end_time DATETIME DEFAULT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
+    PRIMARY KEY (id),
+    KEY idx_firmware (firmware_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- IoT OTA Task Device Table
+CREATE TABLE IF NOT EXISTS iot_ota_task_device (
+    id VARCHAR(32) NOT NULL,
+    task_id VARCHAR(32) NOT NULL,
+    device_id VARCHAR(32) NOT NULL,
+    device_name VARCHAR(100) NOT NULL,
+    product_key VARCHAR(20) NOT NULL,
+    current_version VARCHAR(50) DEFAULT NULL,
+    target_version VARCHAR(50) NOT NULL,
+    status TINYINT DEFAULT 0 COMMENT '0待升级 1推送中 2下载中 3升级中 4成功 5失败 6已取消',
+    progress INT DEFAULT 0,
+    error_message VARCHAR(500) DEFAULT NULL,
+    push_time DATETIME DEFAULT NULL,
+    complete_time DATETIME DEFAULT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_task (task_id),
+    KEY idx_device (device_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

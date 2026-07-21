@@ -8,6 +8,7 @@ import org.lyz.iot.mqtt.handler.PropertyPostHandler;
 import org.lyz.iot.mqtt.handler.EventPostHandler;
 import org.lyz.iot.mqtt.handler.ServiceSetHandler;
 import org.lyz.iot.mqtt.handler.ServiceInvokeHandler;
+import org.lyz.iot.mqtt.handler.OtaHandler;
 import org.lyz.iot.rule.engine.RuleDataBus;
 import org.lyz.iot.rule.model.RuleData;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ public class MqttMessageDispatcher {
     private final EventPostHandler eventPostHandler;
     private final ServiceSetHandler serviceSetHandler;
     private final ServiceInvokeHandler serviceInvokeHandler;
+    private final OtaHandler otaHandler;
     private final RuleDataBus ruleDataBus;
 
     public void dispatch(String topic, String payload) {
@@ -49,6 +51,12 @@ public class MqttMessageDispatcher {
                 serviceSetHandler.handle(normalized, root);
             } else if (method.startsWith("thing.service.") && method.endsWith("_reply")) {
                 serviceInvokeHandler.handle(normalized, root);
+            } else if (topic.contains("/ota/device/inform/")) {
+                otaHandler.handleDeviceInform(normalized, root);
+            } else if (topic.contains("/ota/device/progress/")) {
+                otaHandler.handleDeviceProgress(normalized, root);
+            } else if (topic.contains("/ota/device/download/")) {
+                otaHandler.handleDeviceDownload(normalized, root);
             } else {
                 log.warn("未知MQTT方法: method={}, topic={}", method, normalized);
             }

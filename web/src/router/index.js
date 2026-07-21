@@ -83,6 +83,24 @@ const routes = [
         name: 'IotRuleDesign',
         component: () => import('@/views/iot/RuleEditor.vue'),
         meta: { title: '规则设计', icon: 'Filter', hidden: true }
+      },
+      {
+        path: 'iot/storage',
+        name: 'IotStorage',
+        component: () => import('@/views/iot/FileStorage.vue'),
+        meta: { title: '文件存储', icon: 'FolderOpened' }
+      },
+      {
+        path: 'iot/firmware',
+        name: 'IotFirmware',
+        component: () => import('@/views/iot/Firmware.vue'),
+        meta: { title: '固件管理', icon: 'Upload' }
+      },
+      {
+        path: 'iot/ota',
+        name: 'IotOta',
+        component: () => import('@/views/iot/OtaTask.vue'),
+        meta: { title: 'OTA升级', icon: 'Promotion' }
       }
     ]
   }

@@ -12,5 +12,10 @@ spring:
         server-addr: ${NACOS_SERVER_ADDR:172.26.76.190:8848}
         namespace: ${NACOS_NAMESPACE:}
 
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
 server:
   port: ${SERVER_PORT:8085}

@@ -176,3 +176,97 @@ export function getRuleLogList(params) {
   return request({ url: '/iot/rule/log/list', method: 'get', params })
 }
 
+// ==================== 文件存储 ====================
+
+export function getFileStorageList(params) {
+  return request({ url: '/iot/file-storage/list', method: 'get', params })
+}
+
+export function getFileStorage(id) {
+  return request({ url: `/iot/file-storage/${id}`, method: 'get' })
+}
+
+export function addFileStorage(data) {
+  return request({ url: '/iot/file-storage', method: 'post', data })
+}
+
+export function updateFileStorage(id, data) {
+  return request({ url: `/iot/file-storage/${id}`, method: 'put', data })
+}
+
+export function deleteFileStorage(id) {
+  return request({ url: `/iot/file-storage/${id}`, method: 'delete' })
+}
+
+export function enableFileStorage(id) {
+  return request({ url: `/iot/file-storage/${id}/enable`, method: 'post' })
+}
+
+export function disableFileStorage(id) {
+  return request({ url: `/iot/file-storage/${id}/disable`, method: 'post' })
+}
+
+export function testFileStorage(id) {
+  return request({ url: `/iot/file-storage/${id}/test`, method: 'post' })
+}
+
+// ==================== 固件管理 ====================
+
+export function getFirmwareList(params) {
+  return request({ url: '/iot/firmware/list', method: 'get', params })
+}
+
+export function getFirmware(id) {
+  return request({ url: `/iot/firmware/${id}`, method: 'get' })
+}
+
+export function uploadFirmware(data) {
+  return request({ url: '/iot/firmware/upload', method: 'post', data, headers: { 'Content-Type': 'multipart/form-data' } })
+}
+
+export function updateFirmware(id, data) {
+  return request({ url: `/iot/firmware/${id}`, method: 'put', data })
+}
+
+export function deleteFirmware(id) {
+  return request({ url: `/iot/firmware/${id}`, method: 'delete' })
+}
+
+export function publishFirmware(id) {
+  return request({ url: `/iot/firmware/${id}/publish`, method: 'post' })
+}
+
+export function disableFirmware(id) {
+  return request({ url: `/iot/firmware/${id}/disable`, method: 'post' })
+}
+
+// ==================== OTA升级 ====================
+
+export function getOtaTaskList(params) {
+  return request({ url: '/iot/ota/task/list', method: 'get', params })
+}
+
+export function getOtaTask(id) {
+  return request({ url: `/iot/ota/task/${id}`, method: 'get' })
+}
+
+export function addOtaTask(data) {
+  return request({ url: '/iot/ota/task', method: 'post', data })
+}
+
+export function deleteOtaTask(id) {
+  return request({ url: `/iot/ota/task/${id}`, method: 'delete' })
+}
+
+export function startOtaTask(id) {
+  return request({ url: `/iot/ota/task/${id}/start`, method: 'post' })
+}
+
+export function cancelOtaTask(id) {
+  return request({ url: `/iot/ota/task/${id}/cancel`, method: 'post' })
+}
+
+export function getOtaTaskDevices(id) {
+  return request({ url: `/iot/ota/task/${id}/devices`, method: 'get' })
+}
+
