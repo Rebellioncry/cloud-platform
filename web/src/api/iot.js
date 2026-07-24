@@ -198,14 +198,6 @@ export function deleteFileStorage(id) {
   return request({ url: `/iot/file-storage/${id}`, method: 'delete' })
 }
 
-export function enableFileStorage(id) {
-  return request({ url: `/iot/file-storage/${id}/enable`, method: 'post' })
-}
-
-export function disableFileStorage(id) {
-  return request({ url: `/iot/file-storage/${id}/disable`, method: 'post' })
-}
-
 export function testFileStorage(id) {
   return request({ url: `/iot/file-storage/${id}/test`, method: 'post' })
 }
@@ -230,14 +222,6 @@ export function updateFirmware(id, data) {
 
 export function deleteFirmware(id) {
   return request({ url: `/iot/firmware/${id}`, method: 'delete' })
-}
-
-export function publishFirmware(id) {
-  return request({ url: `/iot/firmware/${id}/publish`, method: 'post' })
-}
-
-export function disableFirmware(id) {
-  return request({ url: `/iot/firmware/${id}/disable`, method: 'post' })
 }
 
 // ==================== OTA升级 ====================

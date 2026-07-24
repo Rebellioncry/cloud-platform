@@ -46,14 +46,26 @@
                 <el-icon class="menu-icon"><component :is="getIcon(menu.icon)" /></el-icon>
                 <span>{{ menu.menuName }}</span>
               </template>
-              <el-menu-item
-                v-for="child in menu.children"
-                :key="child.id"
-                :index="child.path"
-              >
-                <el-icon v-if="child.icon" class="menu-icon"><component :is="getIcon(child.icon)" /></el-icon>
-                <span>{{ child.menuName }}</span>
-              </el-menu-item>
+              <template v-for="child in menu.children" :key="child.id">
+                <el-sub-menu v-if="child.children && child.children.length > 0" :index="child.path || child.id">
+                  <template #title>
+                    <el-icon v-if="child.icon" class="menu-icon"><component :is="getIcon(child.icon)" /></el-icon>
+                    <span>{{ child.menuName }}</span>
+                  </template>
+                  <el-menu-item
+                    v-for="grandchild in child.children"
+                    :key="grandchild.id"
+                    :index="grandchild.path"
+                  >
+                    <el-icon v-if="grandchild.icon" class="menu-icon"><component :is="getIcon(grandchild.icon)" /></el-icon>
+                    <span>{{ grandchild.menuName }}</span>
+                  </el-menu-item>
+                </el-sub-menu>
+                <el-menu-item v-else :index="child.path">
+                  <el-icon v-if="child.icon" class="menu-icon"><component :is="getIcon(child.icon)" /></el-icon>
+                  <span>{{ child.menuName }}</span>
+                </el-menu-item>
+              </template>
             </el-sub-menu>
             <el-menu-item v-else :index="menu.path">
               <el-icon class="menu-icon"><component :is="getIcon(menu.icon)" /></el-icon>

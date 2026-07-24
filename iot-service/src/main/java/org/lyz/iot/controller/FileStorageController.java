@@ -53,20 +53,6 @@ public class FileStorageController {
         return Result.success(null);
     }
 
-    @Operation(summary = "启用存储")
-    @PostMapping("/{id}/enable")
-    public Result<Void> enable(@PathVariable(value = "id") String id) {
-        fileStorageService.enable(id);
-        return Result.success(null);
-    }
-
-    @Operation(summary = "禁用存储")
-    @PostMapping("/{id}/disable")
-    public Result<Void> disable(@PathVariable(value = "id") String id) {
-        fileStorageService.disable(id);
-        return Result.success(null);
-    }
-
     @Operation(summary = "测试连接")
     @PostMapping("/{id}/test")
     public Result<Boolean> testConnection(@PathVariable(value = "id") String id) {

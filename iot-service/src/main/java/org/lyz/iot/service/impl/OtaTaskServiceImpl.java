@@ -16,6 +16,7 @@ import org.lyz.iot.service.OtaTaskService;
 import org.lyz.iot.service.FirmwareService;
 import org.lyz.iot.mqtt.MqttTopicConstants;
 import org.lyz.iot.mqtt.MqttClientManager;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,7 +36,7 @@ public class OtaTaskServiceImpl implements OtaTaskService {
     private final IotMqttConfigDao mqttConfigDao;
     private final FirmwareService firmwareService;
     private final ObjectMapper objectMapper;
-    private final MqttClientManager mqttClientManager;
+    private final ApplicationContext applicationContext;
 
     @Override
     public PageResult<IotOtaTask> list(int page, int size, String taskName) {
@@ -62,7 +63,7 @@ public class OtaTaskServiceImpl implements OtaTaskService {
     @Transactional
     public IotOtaTask create(OtaTaskDTO dto) {
         IotFirmware firmware = firmwareDao.getById(dto.getFirmwareId());
-        if (firmware == null || firmware.getStatus() != 1) {
+        if (firmware == null) {
             throw new BusinessException("固件不存在或未发布");
         }
 
@@ -149,7 +150,7 @@ public class OtaTaskServiceImpl implements OtaTaskService {
                             "fileMd5", firmware.getFileMd5() != null ? firmware.getFileMd5() : "",
                             "taskId", id
                     ));
-                    mqttClientManager.publish(mqttConfig.getId(), topic, payload, mqttConfig.getQos());
+                    applicationContext.getBean(MqttClientManager.class).publish(mqttConfig.getId(), topic, payload, mqttConfig.getQos());
                 } catch (Exception e) {
                     log.error("OTA推送失败: device={}", device.getDeviceName(), e);
                     taskDevice.setStatus(5);

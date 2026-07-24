@@ -65,8 +65,8 @@ public class FirmwareServiceImpl implements FirmwareService {
         }
 
         IotFileStorage storage = fileStorageDao.getById(dto.getStorageId());
-        if (storage == null || storage.getStatus() != 1) {
-            throw new BusinessException("存储配置不存在或已禁用");
+        if (storage == null) {
+            throw new BusinessException("存储配置不存在");
         }
 
         try {
@@ -75,7 +75,8 @@ public class FirmwareServiceImpl implements FirmwareService {
             if (origName != null && origName.contains(".")) {
                 ext = origName.substring(origName.lastIndexOf("."));
             }
-            String objectName = product.getProductKey() + "/" + UUID.randomUUID().toString().replace("-", "") + ext;
+            String dateDir = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+            String objectName = dateDir + "/" + (origName != null ? origName : UUID.randomUUID().toString().replace("-", "") + ext);
 
             FileStorage fileStorage = FileStorageFactory.getStorage(storage);
             String md5 = calcMd5(file);
@@ -94,8 +95,6 @@ public class FirmwareServiceImpl implements FirmwareService {
             firmware.setFileName(origName != null ? origName : "unknown");
             firmware.setFileSize(file.getSize());
             firmware.setFileMd5(md5);
-            firmware.setSignature(dto.getSignature());
-            firmware.setStatus(0);
             firmwareDao.save(firmware);
             return firmware;
         } catch (BusinessException e) {
@@ -109,43 +108,17 @@ public class FirmwareServiceImpl implements FirmwareService {
     @Transactional
     public void update(String id, FirmwareDTO dto) {
         IotFirmware firmware = getById(id);
-        if (firmware.getStatus() == 1) {
-            throw new BusinessException("已发布的固件不能修改");
-        }
         if (dto.getFirmwareName() != null) firmware.setFirmwareName(dto.getFirmwareName());
         if (dto.getFirmwareVersion() != null) firmware.setFirmwareVersion(dto.getFirmwareVersion());
         if (dto.getDescription() != null) firmware.setDescription(dto.getDescription());
-        if (dto.getSignature() != null) firmware.setSignature(dto.getSignature());
         firmwareDao.updateById(firmware);
     }
 
     @Override
     @Transactional
     public void delete(String id) {
-        IotFirmware firmware = getById(id);
-        if (firmware.getStatus() == 1) {
-            throw new BusinessException("已发布的固件不能删除");
-        }
+        getById(id);
         firmwareDao.removeById(id);
-    }
-
-    @Override
-    @Transactional
-    public void publish(String id) {
-        IotFirmware firmware = getById(id);
-        if (firmware.getStatus() == 1) {
-            throw new BusinessException("固件已发布");
-        }
-        firmware.setStatus(1);
-        firmwareDao.updateById(firmware);
-    }
-
-    @Override
-    @Transactional
-    public void disable(String id) {
-        IotFirmware firmware = getById(id);
-        firmware.setStatus(2);
-        firmwareDao.updateById(firmware);
     }
 
     @Override

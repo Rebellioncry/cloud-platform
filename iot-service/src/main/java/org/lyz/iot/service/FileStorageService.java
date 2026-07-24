@@ -10,7 +10,5 @@ public interface FileStorageService {
     IotFileStorage create(FileStorageDTO dto);
     void update(String id, FileStorageDTO dto);
     void delete(String id);
-    void enable(String id);
-    void disable(String id);
     boolean testConnection(String id);
 }

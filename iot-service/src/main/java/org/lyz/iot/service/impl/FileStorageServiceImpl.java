@@ -55,7 +55,6 @@ public class FileStorageServiceImpl implements FileStorageService {
         storage.setBucket(dto.getBucket());
         storage.setRegion(dto.getRegion());
         storage.setIsDefault(dto.getIsDefault() != null ? dto.getIsDefault() : 0);
-        storage.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
         fileStorageDao.save(storage);
         return storage;
     }
@@ -73,7 +72,6 @@ public class FileStorageServiceImpl implements FileStorageService {
         if (dto.getBucket() != null) storage.setBucket(dto.getBucket());
         if (dto.getRegion() != null) storage.setRegion(dto.getRegion());
         if (dto.getIsDefault() != null) storage.setIsDefault(dto.getIsDefault());
-        if (dto.getStatus() != null) storage.setStatus(dto.getStatus());
         fileStorageDao.updateById(storage);
         FileStorageFactory.removeCache(id);
     }
@@ -83,24 +81,6 @@ public class FileStorageServiceImpl implements FileStorageService {
     public void delete(String id) {
         getById(id);
         fileStorageDao.removeById(id);
-        FileStorageFactory.removeCache(id);
-    }
-
-    @Override
-    @Transactional
-    public void enable(String id) {
-        IotFileStorage storage = getById(id);
-        storage.setStatus(1);
-        fileStorageDao.updateById(storage);
-        FileStorageFactory.removeCache(id);
-    }
-
-    @Override
-    @Transactional
-    public void disable(String id) {
-        IotFileStorage storage = getById(id);
-        storage.setStatus(0);
-        fileStorageDao.updateById(storage);
         FileStorageFactory.removeCache(id);
     }
 

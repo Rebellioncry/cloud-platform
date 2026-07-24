@@ -16,12 +16,10 @@
     <template v-if="viewMode === 'card'">
       <div v-if="tableData.length === 0 && !loading" class="empty-tip">暂无存储配置</div>
       <div class="card-grid" v-loading="loading">
-        <div v-for="row in tableData" :key="row.id" class="device-card" :class="row.status === 0 ? '' : 'card-disabled'">
+        <div v-for="row in tableData" :key="row.id" class="device-card">
           <div class="card-top" :style="{ borderLeftColor: row.isDefault ? '#409eff' : '#67c23a' }">
             <div class="card-title-row">
               <span class="card-title">{{ row.name }}</span>
-              <el-tag v-if="row.status === 0" type="success" size="small">启用</el-tag>
-              <el-tag v-else type="danger" size="small">禁用</el-tag>
             </div>
             <div class="card-key">{{ row.storageType === 1 ? 'MinIO' : '本地存储' }}{{ row.isDefault ? ' · 默认' : '' }}</div>
           </div>
@@ -45,8 +43,6 @@
           </div>
           <div class="card-footer">
             <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-            <el-button v-if="row.status === 0" link type="warning" size="small" @click="handleDisable(row)">禁用</el-button>
-            <el-button v-if="row.status !== 0" link type="success" size="small" @click="handleEnable(row)">启用</el-button>
             <el-button link type="primary" size="small" @click="handleTest(row)">测试连接</el-button>
             <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </div>
@@ -73,18 +69,10 @@
             <span v-else>--</span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80">
-          <template #default="{ row }">
-            <el-tag v-if="row.status === 0" type="success" size="small">启用</el-tag>
-            <el-tag v-else type="danger" size="small">禁用</el-tag>
-          </template>
-        </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="260" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button v-if="row.status === 0" link type="warning" @click="handleDisable(row)">禁用</el-button>
-            <el-button v-if="row.status !== 0" link type="success" @click="handleEnable(row)">启用</el-button>
             <el-button link type="primary" @click="handleTest(row)">测试连接</el-button>
             <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -156,8 +144,6 @@ import {
   addFileStorage,
   updateFileStorage,
   deleteFileStorage,
-  enableFileStorage,
-  disableFileStorage,
   testFileStorage
 } from '@/api/iot'
 
@@ -252,27 +238,6 @@ const handleDelete = async (row) => {
   }
 }
 
-const handleEnable = async (row) => {
-  try {
-    await enableFileStorage(row.id)
-    ElMessage.success('已启用')
-    loadData()
-  } catch (e) {
-    console.error(e)
-  }
-}
-
-const handleDisable = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要禁用该存储吗？', '提示', { type: 'warning' })
-    await disableFileStorage(row.id)
-    ElMessage.success('已禁用')
-    loadData()
-  } catch (e) {
-    if (e !== 'cancel') console.error(e)
-  }
-}
-
 const handleTest = async (row) => {
   const loadingInstance = ElMessage({ message: '正在测试连接...', type: 'info', duration: 0 })
   try {
@@ -330,10 +295,6 @@ onMounted(() => {
   border-color: #2a4060;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
-.device-card.card-disabled {
-  opacity: 0.7;
-}
-
 .card-top {
   padding: 16px 18px 12px;
   border-left: 3px solid #67c23a;

@@ -25,21 +25,10 @@
           <span class="mono">{{ row.fileMd5 ? row.fileMd5.substring(0, 12) + '...' : '--' }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="90">
-        <template #default="{ row }">
-          <el-tag v-if="row.status === 0" type="info" size="small">未发布</el-tag>
-          <el-tag v-else-if="row.status === 1" type="success" size="small">已发布</el-tag>
-          <el-tag v-else type="danger" size="small">已禁用</el-tag>
-        </template>
-      </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="220" fixed="right">
+      <el-table-column label="操作" width="100" fixed="right">
         <template #default="{ row }">
-          <el-button v-if="row.status === 0" link type="success" @click="handlePublish(row)">发布</el-button>
-          <el-button v-if="row.status === 1" link type="warning" @click="handleDisable(row)">禁用</el-button>
-          <el-tooltip content="仅未发布状态可删除" :disabled="row.status !== 0" placement="top">
-            <el-button link type="danger" :disabled="row.status !== 0" @click="handleDelete(row)">删除</el-button>
-          </el-tooltip>
+          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -93,9 +82,6 @@
             </div>
           </el-upload>
         </el-form-item>
-        <el-form-item label="签名">
-          <el-input v-model="form.signature" placeholder="可选，固件签名" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -112,8 +98,6 @@ import {
   getFirmwareList,
   uploadFirmware,
   deleteFirmware,
-  publishFirmware,
-  disableFirmware,
   getProductList,
   getFileStorageList
 } from '@/api/iot'
@@ -138,8 +122,7 @@ const defaultForm = {
   firmwareVersion: '',
   description: '',
   storageId: null,
-  file: null,
-  signature: ''
+  file: null
 }
 const form = reactive({ ...defaultForm })
 
@@ -210,32 +193,6 @@ const handleUpload = () => {
   dialogVisible.value = true
 }
 
-const handlePublish = async (row) => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要发布固件「${row.firmwareName} v${row.firmwareVersion}」吗？发布后设备将可收到升级推送。`,
-      '发布确认',
-      { type: 'warning', confirmButtonText: '确定发布', cancelButtonText: '取消' }
-    )
-    await publishFirmware(row.id)
-    ElMessage.success('发布成功')
-    loadData()
-  } catch (e) {
-    if (e !== 'cancel') console.error(e)
-  }
-}
-
-const handleDisable = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要禁用该固件吗？', '提示', { type: 'warning' })
-    await disableFirmware(row.id)
-    ElMessage.success('已禁用')
-    loadData()
-  } catch (e) {
-    if (e !== 'cancel') console.error(e)
-  }
-}
-
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm(
@@ -267,7 +224,6 @@ const handleSubmit = async () => {
     if (form.description) formData.append('description', form.description)
     formData.append('storageId', form.storageId)
     formData.append('file', form.file)
-    if (form.signature) formData.append('signature', form.signature)
     await uploadFirmware(formData)
     ElMessage.success('上传成功')
     dialogVisible.value = false

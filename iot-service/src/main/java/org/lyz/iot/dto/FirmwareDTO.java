@@ -32,7 +32,4 @@ public class FirmwareDTO {
 
     @Schema(description = "文件MD5")
     private String fileMd5;
-
-    @Schema(description = "签名")
-    private String signature;
 }

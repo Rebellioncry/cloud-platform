@@ -44,10 +44,4 @@ public class IotFirmware extends BaseEntity {
 
     @Schema(description = "文件MD5")
     private String fileMd5;
-
-    @Schema(description = "签名")
-    private String signature;
-
-    @Schema(description = "状态(0未发布 1已发布 2已禁用)")
-    private Integer status;
 }

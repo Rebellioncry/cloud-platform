@@ -35,7 +35,4 @@ public class FileStorageDTO {
 
     @Schema(description = "是否默认")
     private Integer isDefault;
-
-    @Schema(description = "状态")
-    private Integer status;
 }

@@ -41,7 +41,4 @@ public class IotFileStorage extends BaseEntity {
 
     @Schema(description = "是否默认")
     private Integer isDefault;
-
-    @Schema(description = "状态(0禁用 1启用)")
-    private Integer status;
 }

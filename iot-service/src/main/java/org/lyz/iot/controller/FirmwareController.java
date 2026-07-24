@@ -39,7 +39,17 @@ public class FirmwareController {
     @PostMapping("/upload")
     public Result<IotFirmware> upload(
             @RequestPart(value = "file") MultipartFile file,
-            @RequestPart(value = "data") FirmwareDTO dto) {
+            @RequestParam(value = "productId") String productId,
+            @RequestParam(value = "firmwareName") String firmwareName,
+            @RequestParam(value = "firmwareVersion") String firmwareVersion,
+            @RequestParam(value = "storageId") String storageId,
+            @RequestParam(value = "description", required = false) String description) {
+        FirmwareDTO dto = new FirmwareDTO();
+        dto.setProductId(productId);
+        dto.setFirmwareName(firmwareName);
+        dto.setFirmwareVersion(firmwareVersion);
+        dto.setStorageId(storageId);
+        dto.setDescription(description);
         return Result.success(firmwareService.create(dto, file));
     }
 
@@ -54,20 +64,6 @@ public class FirmwareController {
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable(value = "id") String id) {
         firmwareService.delete(id);
-        return Result.success(null);
-    }
-
-    @Operation(summary = "发布固件")
-    @PostMapping("/{id}/publish")
-    public Result<Void> publish(@PathVariable(value = "id") String id) {
-        firmwareService.publish(id);
-        return Result.success(null);
-    }
-
-    @Operation(summary = "禁用固件")
-    @PostMapping("/{id}/disable")
-    public Result<Void> disable(@PathVariable(value = "id") String id) {
-        firmwareService.disable(id);
         return Result.success(null);
     }
 

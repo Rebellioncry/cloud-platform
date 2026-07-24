@@ -11,7 +11,5 @@ public interface FirmwareService {
     IotFirmware create(FirmwareDTO dto, MultipartFile file);
     void update(String id, FirmwareDTO dto);
     void delete(String id);
-    void publish(String id);
-    void disable(String id);
     String getDownloadUrl(String id);
 }
