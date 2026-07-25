@@ -47,8 +47,8 @@
           <el-button v-if="row.status === 0" link type="success" @click="handleStart(row)">启动</el-button>
           <el-button v-if="row.status === 1" link type="warning" @click="handleCancel(row)">取消</el-button>
           <el-button link type="primary" @click="handleDevices(row)">设备明细</el-button>
-          <el-tooltip content="仅待执行状态可删除" :disabled="row.status !== 0" placement="top">
-            <el-button link type="danger" :disabled="row.status !== 0" @click="handleDelete(row)">删除</el-button>
+          <el-tooltip content="执行中的任务不能删除" :disabled="row.status !== 1" placement="top">
+            <el-button link type="danger" :disabled="row.status === 1" @click="handleDelete(row)">删除</el-button>
           </el-tooltip>
         </template>
       </el-table-column>
@@ -88,8 +88,12 @@
             <el-radio :value="2">按版本</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item v-if="form.targetType === 1" label="设备ID" prop="deviceIds">
-          <el-input v-model="form.deviceIds" type="textarea" :rows="3" placeholder="多个设备ID用逗号分隔，如: device01,device02,device03" />
+        <el-form-item v-if="form.targetType === 1" label="选择设备" prop="selectedDeviceIds">
+          <el-select v-model="form.selectedDeviceIds" multiple filterable placeholder="请选择设备" style="width: 100%"
+                     :disabled="!form.productId">
+            <el-option v-for="d in deviceSelectList" :key="d.id"
+                       :label="d.deviceName + ' (' + d.id.substring(0, 8) + '...)'" :value="d.id" />
+          </el-select>
         </el-form-item>
         <el-form-item v-if="form.targetType === 2" label="目标版本" prop="targetVersion">
           <el-input v-model="form.targetVersion" placeholder="如: 1.0.0（低于此版本的设备将升级）" />
@@ -137,12 +141,14 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getOtaTaskList,
+  addOtaTask,
   deleteOtaTask,
   startOtaTask,
   cancelOtaTask,
   getOtaTaskDevices,
   getFirmwareList,
-  getProductList
+  getProductList,
+  getDeviceList
 } from '@/api/iot'
 
 const loading = ref(false)
@@ -151,6 +157,7 @@ const tableData = ref([])
 const deviceList = ref([])
 const productList = ref([])
 const firmwareList = ref([])
+const deviceSelectList = ref([])
 const searchName = ref('')
 const dialogVisible = ref(false)
 const drawerVisible = ref(false)
@@ -164,7 +171,7 @@ const defaultForm = {
   productId: null,
   firmwareId: null,
   targetType: 0,
-  deviceIds: '',
+  selectedDeviceIds: [],
   targetVersion: ''
 }
 const form = reactive({ ...defaultForm })
@@ -187,16 +194,26 @@ const loadProducts = async () => {
 
 const loadFirmwares = async (productId) => {
   try {
-    const params = { page: 1, size: 1000, status: 1 }
+    const params = { page: 1, size: 1000 }
     if (productId) params.productId = productId
     const res = await getFirmwareList(params)
     firmwareList.value = res.data?.records || []
   } catch (e) { /* ignore */ }
 }
 
+const loadDevices = async (productId) => {
+  if (!productId) { deviceSelectList.value = []; return }
+  try {
+    const res = await getDeviceList({ page: 1, size: 1000, productId })
+    deviceSelectList.value = res.data?.records || []
+  } catch (e) { /* ignore */ }
+}
+
 const onProductChange = () => {
   form.firmwareId = null
+  form.selectedDeviceIds = []
   loadFirmwares(form.productId)
+  loadDevices(form.productId)
 }
 
 const loadData = async () => {
@@ -283,8 +300,8 @@ const handleDevices = async (row) => {
 const handleSubmit = async () => {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
-  if (form.targetType === 1 && !form.deviceIds) {
-    ElMessage.warning('请输入设备ID')
+  if (form.targetType === 1 && (!form.selectedDeviceIds || form.selectedDeviceIds.length === 0)) {
+    ElMessage.warning('请选择至少一个设备')
     return
   }
   if (form.targetType === 2 && !form.targetVersion) {
@@ -296,10 +313,13 @@ const handleSubmit = async () => {
       taskName: form.taskName,
       productId: form.productId,
       firmwareId: form.firmwareId,
-      targetType: form.targetType
+      targetType: form.targetType,
+      targetValue: form.targetType === 1
+        ? JSON.stringify(form.selectedDeviceIds)
+        : form.targetType === 2
+          ? form.targetVersion
+          : null
     }
-    if (form.targetType === 1) data.deviceIds = form.deviceIds
-    if (form.targetType === 2) data.targetVersion = form.targetVersion
     await addOtaTask(data)
     ElMessage.success('任务创建成功')
     dialogVisible.value = false

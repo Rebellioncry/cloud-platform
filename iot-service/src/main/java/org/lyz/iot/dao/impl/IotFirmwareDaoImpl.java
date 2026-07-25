@@ -21,6 +21,12 @@ public class IotFirmwareDaoImpl extends ServiceImpl<IotFirmwareMapper, IotFirmwa
 
     @TenantIgnore
     @Override
+    public IotFirmware getOneIgnoreTenant(Wrapper<IotFirmware> queryWrapper) {
+        return getOne(queryWrapper);
+    }
+
+    @TenantIgnore
+    @Override
     public boolean updateByIdIgnoreTenant(IotFirmware entity) {
         return updateById(entity);
     }

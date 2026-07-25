@@ -124,7 +124,13 @@ public class FirmwareServiceImpl implements FirmwareService {
     @Override
     public String getDownloadUrl(String id) {
         IotFirmware firmware = getById(id);
-        IotFileStorage storage = fileStorageDao.getById(firmware.getStorageId());
+        return getDownloadUrl(firmware);
+    }
+
+    @Override
+    public String getDownloadUrl(IotFirmware firmware) {
+        IotFileStorage storage = fileStorageDao.getOneIgnoreTenant(
+                new LambdaQueryWrapper<IotFileStorage>().eq(IotFileStorage::getId, firmware.getStorageId()));
         if (storage == null) {
             throw new BusinessException("存储配置不存在");
         }

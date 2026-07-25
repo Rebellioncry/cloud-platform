@@ -12,4 +12,5 @@ public interface FirmwareService {
     void update(String id, FirmwareDTO dto);
     void delete(String id);
     String getDownloadUrl(String id);
+    String getDownloadUrl(IotFirmware firmware);
 }

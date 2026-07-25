@@ -19,6 +19,16 @@ public class MqttTopicUtils {
         return parts.length > 4 ? parts[4] : "";
     }
 
+    public static String extractOtaProductKey(String topic) {
+        String[] parts = normalizeTopic(topic).split("/");
+        return parts.length > 3 ? parts[3] : "";
+    }
+
+    public static String extractOtaDeviceName(String topic) {
+        String[] parts = normalizeTopic(topic).split("/");
+        return parts.length > 4 ? parts[4] : "";
+    }
+
     public static String normalizeTopic(String topic) {
         if (topic == null) return "";
         if (topic.startsWith(SHARE_PREFIX)) {

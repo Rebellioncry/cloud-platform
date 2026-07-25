@@ -1,6 +1,7 @@
 package org.lyz.iot.rule.engine;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.lyz.iot.entity.IotRule;
@@ -31,6 +32,7 @@ public class RuleEngineService {
     private final TaskExecutorRegistry taskExecutorRegistry;
     private final IotRuleDao ruleDao;
     private final RuleLogService ruleLogService;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final ThreadPoolExecutor executorService = new ThreadPoolExecutor(
             8, 32, 60L, TimeUnit.SECONDS,
@@ -167,7 +169,7 @@ public class RuleEngineService {
             execLog.setDeviceKey(ruleData.getString("deviceName"));
             execLog.setProductKey(ruleData.getString("productKey"));
             execLog.setExecuteTime(LocalDateTime.now());
-            execLog.setInputData(ruleData.getString("payload"));
+            execLog.setInputData(serializePayload(ruleData.get("payload")));
             execLog.setStatus(ex != null || (result != null && result.isStopped()) ? 1 : 0);
             if (ex != null) {
                 execLog.setErrorMessage(ex.getMessage());
@@ -185,6 +187,16 @@ public class RuleEngineService {
             ruleDao.updateIgnoreTenant(null, update);
         } catch (Exception e) {
             log.error("更新规则匹配次数失败: {}", ruleId, e);
+        }
+    }
+
+    private String serializePayload(Object payload) {
+        if (payload == null) return null;
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (Exception e) {
+            log.warn("序列化payload失败, 回退toString: {}", e.getMessage());
+            return payload.toString();
         }
     }
 

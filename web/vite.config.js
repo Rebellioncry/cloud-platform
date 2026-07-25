@@ -10,7 +10,7 @@ export default defineConfig({
     }
   },
   server: {
-    port: 9000,
+    port: 9347,
     proxy: {
       '/auth': {
         target: 'http://localhost:8080',

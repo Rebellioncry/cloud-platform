@@ -35,8 +35,8 @@ public class OtaHandler {
 
     public void handleDeviceInform(String topic, JsonNode root) {
         try {
-            String productKey = MqttTopicUtils.extractProductKey(topic);
-            String deviceName = MqttTopicUtils.extractDeviceName(topic);
+            String productKey = MqttTopicUtils.extractOtaProductKey(topic);
+            String deviceName = MqttTopicUtils.extractOtaDeviceName(topic);
             JsonNode params = root.get("params");
             if (params == null) return;
 
@@ -62,7 +62,7 @@ public class OtaHandler {
 
     private void checkAndPushUpgrade(IotDevice device, String productKey, String deviceName, String currentVersion) {
         try {
-            List<IotOtaTask> tasks = taskDao.list(
+            List<IotOtaTask> tasks = taskDao.listIgnoreTenant(
                     new LambdaQueryWrapper<IotOtaTask>()
                             .eq(IotOtaTask::getProductKey, productKey)
                             .in(IotOtaTask::getStatus, 0, 1)
@@ -71,7 +71,8 @@ public class OtaHandler {
             if (tasks.isEmpty()) return;
 
             for (IotOtaTask task : tasks) {
-                IotFirmware firmware = firmwareDao.getById(task.getFirmwareId());
+                IotFirmware firmware = firmwareDao.getOneIgnoreTenant(
+                        new LambdaQueryWrapper<IotFirmware>().eq(IotFirmware::getId, task.getFirmwareId()));
                 if (firmware == null || firmware.getFirmwareVersion() == null) continue;
 
                 String targetVersion = firmware.getFirmwareVersion();
@@ -80,7 +81,7 @@ public class OtaHandler {
                     continue;
                 }
 
-                IotOtaTaskDevice taskDevice = taskDeviceDao.getOne(
+                IotOtaTaskDevice taskDevice = taskDeviceDao.getOneIgnoreTenant(
                         new LambdaQueryWrapper<IotOtaTaskDevice>()
                                 .eq(IotOtaTaskDevice::getTaskId, task.getId())
                                 .eq(IotOtaTaskDevice::getDeviceName, deviceName)
@@ -113,6 +114,7 @@ public class OtaHandler {
                     taskDevice.setProductKey(productKey);
                     taskDevice.setCurrentVersion(currentVersion);
                     taskDevice.setTargetVersion(targetVersion);
+                    taskDevice.setTenantId(device.getTenantId());
                     taskDevice.setStatus(0);
                     taskDevice.setProgress(0);
                     taskDeviceDao.save(taskDevice);
@@ -133,7 +135,7 @@ public class OtaHandler {
 
     private void pushUpgradeToDevice(IotDevice device, IotFirmware firmware, IotOtaTask task, IotOtaTaskDevice taskDevice) {
         try {
-            String downloadUrl = firmwareService.getDownloadUrl(firmware.getId());
+            String downloadUrl = firmwareService.getDownloadUrl(firmware);
             IotMqttConfig mqttConfig = findActiveMqttConfig();
             if (mqttConfig == null) {
                 log.warn("主动拉取: 无可用MQTT连接, taskId={}", task.getId());
@@ -151,12 +153,12 @@ public class OtaHandler {
 
             taskDevice.setStatus(1);
             taskDevice.setPushTime(LocalDateTime.now());
-            taskDeviceDao.updateById(taskDevice);
+            taskDeviceDao.updateByIdIgnoreTenant(taskDevice);
 
             if (task.getStatus() == 0) {
                 task.setStatus(1);
                 task.setStartTime(LocalDateTime.now());
-                taskDao.updateById(task);
+                taskDao.updateByIdIgnoreTenant(task);
             }
 
             applicationContext.getBean(MqttClientManager.class).publish(mqttConfig.getId(), topic, payload, mqttConfig.getQos());
@@ -166,14 +168,14 @@ public class OtaHandler {
             taskDevice.setStatus(5);
             taskDevice.setErrorMessage("推送失败: " + e.getMessage());
             taskDevice.setCompleteTime(LocalDateTime.now());
-            taskDeviceDao.updateById(taskDevice);
+            taskDeviceDao.updateByIdIgnoreTenant(taskDevice);
         }
     }
 
     public void handleDeviceProgress(String topic, JsonNode root) {
         try {
-            String productKey = MqttTopicUtils.extractProductKey(topic);
-            String deviceName = MqttTopicUtils.extractDeviceName(topic);
+            String productKey = MqttTopicUtils.extractOtaProductKey(topic);
+            String deviceName = MqttTopicUtils.extractOtaDeviceName(topic);
 
             String taskId = root.has("id") ? root.get("id").asText() : null;
             Integer progress = root.has("progress") ? root.get("progress").asInt() : 0;
@@ -192,8 +194,8 @@ public class OtaHandler {
 
     public void handleDeviceDownload(String topic, JsonNode root) {
         try {
-            String productKey = MqttTopicUtils.extractProductKey(topic);
-            String deviceName = MqttTopicUtils.extractDeviceName(topic);
+            String productKey = MqttTopicUtils.extractOtaProductKey(topic);
+            String deviceName = MqttTopicUtils.extractOtaDeviceName(topic);
 
             String taskId = root.has("id") ? root.get("id").asText() : null;
             String status = root.has("status") ? root.get("status").asText() : "";
@@ -212,6 +214,7 @@ public class OtaHandler {
         LambdaQueryWrapper<IotMqttConfig> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(IotMqttConfig::getStatus, 1);
         wrapper.last("LIMIT 1");
-        return applicationContext.getBean(IotMqttConfigDao.class).getOne(wrapper);
+        return applicationContext.getBean(IotMqttConfigDao.class).listIgnoreTenant(wrapper)
+                .stream().findFirst().orElse(null);
     }
 }

@@ -10,5 +10,7 @@ public interface IotFirmwareDao extends IService<IotFirmware> {
 
     List<IotFirmware> listIgnoreTenant(Wrapper<IotFirmware> queryWrapper);
 
+    IotFirmware getOneIgnoreTenant(Wrapper<IotFirmware> queryWrapper);
+
     boolean updateByIdIgnoreTenant(IotFirmware entity);
 }

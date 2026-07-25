@@ -51,11 +51,11 @@ public class MqttMessageDispatcher {
                 serviceSetHandler.handle(normalized, root);
             } else if (method.startsWith("thing.service.") && method.endsWith("_reply")) {
                 serviceInvokeHandler.handle(normalized, root);
-            } else if (topic.contains("/ota/device/inform/")) {
+            } else if (topic.contains("ota/device/inform/")) {
                 otaHandler.handleDeviceInform(normalized, root);
-            } else if (topic.contains("/ota/device/progress/")) {
+            } else if (topic.contains("ota/device/progress/")) {
                 otaHandler.handleDeviceProgress(normalized, root);
-            } else if (topic.contains("/ota/device/download/")) {
+            } else if (topic.contains("ota/device/download/")) {
                 otaHandler.handleDeviceDownload(normalized, root);
             } else {
                 log.warn("未知MQTT方法: method={}, topic={}", method, normalized);

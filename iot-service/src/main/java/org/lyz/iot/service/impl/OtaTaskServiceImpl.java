@@ -199,7 +199,7 @@ public class OtaTaskServiceImpl implements OtaTaskService {
     @Override
     @Transactional
     public void updateDeviceProgress(String taskId, String deviceName, Integer progress, String status, String errorMessage) {
-        IotOtaTaskDevice taskDevice = taskDeviceDao.getOne(
+        IotOtaTaskDevice taskDevice = taskDeviceDao.getOneIgnoreTenant(
                 new LambdaQueryWrapper<IotOtaTaskDevice>()
                         .eq(IotOtaTaskDevice::getTaskId, taskId)
                         .eq(IotOtaTaskDevice::getDeviceName, deviceName)
@@ -212,6 +212,7 @@ public class OtaTaskServiceImpl implements OtaTaskService {
         if ("success".equals(status)) {
             taskDevice.setStatus(4);
             taskDevice.setProgress(100);
+            taskDevice.setErrorMessage(null);
             taskDevice.setCompleteTime(LocalDateTime.now());
         } else if ("fail".equals(status)) {
             taskDevice.setStatus(5);
@@ -224,15 +225,17 @@ public class OtaTaskServiceImpl implements OtaTaskService {
             taskDevice.setStatus(3);
             taskDevice.setProgress(progress);
         }
-        taskDeviceDao.updateById(taskDevice);
+        taskDeviceDao.updateByIdIgnoreTenant(taskDevice);
 
-        IotOtaTask task = taskDao.getById(taskId);
+        IotOtaTask task = taskDao.listIgnoreTenant(
+                new LambdaQueryWrapper<IotOtaTask>().eq(IotOtaTask::getId, taskId))
+                .stream().findFirst().orElse(null);
         if (task != null) {
             LambdaQueryWrapper<IotOtaTaskDevice> qw = new LambdaQueryWrapper<IotOtaTaskDevice>()
                     .eq(IotOtaTaskDevice::getTaskId, taskId);
-            long total = taskDeviceDao.count(qw);
-            long success = taskDeviceDao.count(qw.eq(IotOtaTaskDevice::getStatus, 4));
-            long fail = taskDeviceDao.count(qw.eq(IotOtaTaskDevice::getStatus, 5));
+            long total = taskDeviceDao.listIgnoreTenant(qw).size();
+            long success = taskDeviceDao.listIgnoreTenant(qw.eq(IotOtaTaskDevice::getStatus, 4)).size();
+            long fail = taskDeviceDao.listIgnoreTenant(qw.eq(IotOtaTaskDevice::getStatus, 5)).size();
             task.setTotalCount((int) total);
             task.setSuccessCount((int) success);
             task.setFailCount((int) fail);
@@ -241,7 +244,7 @@ public class OtaTaskServiceImpl implements OtaTaskService {
                 task.setStatus(2);
                 task.setEndTime(LocalDateTime.now());
             }
-            taskDao.updateById(task);
+            taskDao.updateByIdIgnoreTenant(task);
         }
     }
 
