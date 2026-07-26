@@ -23,6 +23,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
             "/login",
             "/logout",
             "/code/**",
+            "/captcha/**",
             "/emqx/**",
             "/social/**",
             "/actuator/**",

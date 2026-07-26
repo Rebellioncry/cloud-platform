@@ -1,5 +1,5 @@
 {
-  "name": "cloud-platform-web",
+  "name": "iot-platform-web",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -16,6 +16,7 @@
     "@logicflow/extension": "^2.3.0",
     "@logicflow/vue-node-registry": "^1.2.4",
     "axios": "^1.6.0",
+    "captcha-web-sdk": "^1.0.11",
     "codemirror": "^6.0.2",
     "echarts": "^6.1.0",
     "element-plus": "^2.5.0",

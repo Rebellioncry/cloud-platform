@@ -3,6 +3,7 @@ package org.lyz.system.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import cn.dev33.satoken.annotation.SaIgnore;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.lyz.common.core.result.PageResult;
@@ -75,6 +76,14 @@ public class UserController {
             @Parameter(description = "用户ID") @RequestParam(value = "userId") String userId,
             @Parameter(description = "角色ID列表") @RequestBody List<String> roleIds) {
         userService.assignRoles(userId, roleIds);
+        return Result.success();
+    }
+
+    @Operation(summary = "迁移明文密码", description = "将数据库中所有明文密码迁移为BCrypt加密（一次性调用）")
+    @SaIgnore
+    @PostMapping("/migrate-passwords")
+    public Result<Void> migratePasswords() {
+        userService.migratePlaintextPasswords();
         return Result.success();
     }
 }

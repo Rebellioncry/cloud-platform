@@ -2,8 +2,7 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-header">
-        <h2>Cloud Platform</h2>
-        <p>微服务平台管理系统</p>
+        <h2>物联网平台</h2>
       </div>
 
       <el-tabs v-model="activeTab" stretch>
@@ -15,15 +14,10 @@
             <el-form-item prop="password">
               <el-input v-model="passwordForm.password" type="password" placeholder="密码" prefix-icon="Lock" size="large" show-password @keyup.enter="handlePasswordLogin" />
             </el-form-item>
-            <el-form-item>
-              <el-button type="primary" size="large" :loading="loading" style="width: 100%" @click="handlePasswordLogin">
-                登 录
-              </el-button>
-            </el-form-item>
           </el-form>
         </el-tab-pane>
 
-        <el-tab-pane label="手机号登录" name="sms">
+        <el-tab-pane label="手机号登录" name="sms" v-if="false">
           <el-form ref="smsFormRef" :model="smsForm" :rules="smsRules" class="login-form">
             <el-form-item prop="mobile">
               <el-input v-model="smsForm.mobile" placeholder="手机号" prefix-icon="Iphone" size="large" />
@@ -31,15 +25,10 @@
             <el-form-item prop="code">
               <div class="code-row">
                 <el-input v-model="smsForm.code" placeholder="验证码" prefix-icon="Message" size="large" @keyup.enter="handleSmsLogin" />
-                <el-button size="large" :disabled="smsCountdown > 0" @click="handleSendCode('sms', smsForm.mobile)">
+                <el-button size="large" :disabled="smsCountdown > 0 || !captchaVerified" @click="handleSendCode('sms', smsForm.mobile)">
                   {{ smsCountdown > 0 ? smsCountdown + 's' : '获取验证码' }}
                 </el-button>
               </div>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" size="large" :loading="loading" style="width: 100%" @click="handleSmsLogin">
-                登 录
-              </el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
@@ -52,29 +41,40 @@
             <el-form-item prop="code">
               <div class="code-row">
                 <el-input v-model="emailForm.code" placeholder="验证码" prefix-icon="Promotion" size="large" @keyup.enter="handleEmailLogin" />
-                <el-button size="large" :disabled="emailCountdown > 0" @click="handleSendCode('email', emailForm.email)">
+                <el-button size="large" :disabled="emailCountdown > 0 || !captchaVerified" @click="handleSendCode('email', emailForm.email)">
                   {{ emailCountdown > 0 ? emailCountdown + 's' : '获取验证码' }}
                 </el-button>
               </div>
             </el-form-item>
-            <el-form-item>
-              <el-button type="primary" size="large" :loading="loading" style="width: 100%" @click="handleEmailLogin">
-                登 录
-              </el-button>
-            </el-form-item>
           </el-form>
         </el-tab-pane>
       </el-tabs>
+
+      <div class="captcha-wrapper">
+        <div id="tac-captcha-box"></div>
+      </div>
+
+      <el-button v-if="activeTab === 'password'" type="primary" size="large" :loading="loading" :disabled="!captchaVerified" style="width: 100%" @click="handlePasswordLogin">
+        登 录
+      </el-button>
+      <el-button v-else-if="activeTab === 'sms'" type="primary" size="large" :loading="loading" :disabled="!captchaVerified" style="width: 100%" @click="handleSmsLogin">
+        登 录
+      </el-button>
+      <el-button v-else type="primary" size="large" :loading="loading" :disabled="!captchaVerified" style="width: 100%" @click="handleEmailLogin">
+        登 录
+      </el-button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { login as loginApi, sendCode, codeLogin } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
+import CaptchaWebSdk from 'captcha-web-sdk'
+import 'captcha-web-sdk/style.css'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -91,6 +91,10 @@ const emailFormRef = ref()
 const passwordForm = reactive({ username: 'admin', password: '123456' })
 const smsForm = reactive({ mobile: '', code: '' })
 const emailForm = reactive({ email: '', code: '' })
+
+const captchaVerified = ref(false)
+const captchaToken = ref('')
+let tacInstance = null
 
 const passwordRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -135,9 +139,13 @@ const handleSendCode = async (type, target) => {
 const handlePasswordLogin = async () => {
   const valid = await passwordFormRef.value.validate().catch(() => false)
   if (!valid) return
+  if (!captchaVerified.value) {
+    ElMessage.warning('请先完成安全验证')
+    return
+  }
   loading.value = true
   try {
-    const res = await loginApi(passwordForm.username, passwordForm.password)
+    const res = await loginApi(passwordForm.username, passwordForm.password, captchaToken.value)
     userStore.setUserToken(res.data.token)
     userStore.setUserInfo(res.data)
     ElMessage.success('登录成功')
@@ -148,6 +156,40 @@ const handlePasswordLogin = async () => {
     loading.value = false
   }
 }
+
+const initCaptcha = () => {
+  tacInstance = new CaptchaWebSdk(
+    {
+      requestCaptchaDataUrl: '/auth/captcha/gen',
+      validCaptchaUrl: '/auth/captcha/check',
+      bindEl: '#tac-captcha-box',
+      validSuccess: (res, captcha, tac) => {
+        captchaVerified.value = true
+        captchaToken.value = res.data
+        ElMessage.success('验证通过')
+      },
+      validFail: (res, captcha, tac) => {
+        captchaVerified.value = false
+        captchaToken.value = ''
+      }
+    },
+    {
+      logoUrl: null
+    }
+  )
+
+  tacInstance.init()
+}
+
+onMounted(() => {
+  initCaptcha()
+})
+
+onBeforeUnmount(() => {
+  if (tacInstance) {
+    tacInstance = null
+  }
+})
 
 const handleSmsLogin = async () => {
   const valid = await smsFormRef.value.validate().catch(() => false)
@@ -194,7 +236,7 @@ const handleEmailLogin = async () => {
 }
 
 .login-box {
-  width: 420px;
+  width: 450px;
   padding: 40px;
   background: #132238;
   border-radius: 10px;
@@ -210,16 +252,17 @@ const handleEmailLogin = async () => {
 .login-header h2 {
   font-size: 28px;
   color: #e2e8f0;
-  margin-bottom: 10px;
-}
-
-.login-header p {
-  color: #8899aa;
-  font-size: 14px;
+  margin-bottom: 0;
 }
 
 .login-form {
   margin-top: 15px;
+}
+
+.captcha-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
 }
 
 .code-row {

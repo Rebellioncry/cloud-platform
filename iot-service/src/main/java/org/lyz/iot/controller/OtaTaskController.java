@@ -69,6 +69,15 @@ public class OtaTaskController {
         return Result.success(otaTaskService.listTaskDevices(id));
     }
 
+    @Operation(summary = "重试失败设备")
+    @PostMapping("/{id}/retry")
+    public Result<Void> retry(
+            @PathVariable(value = "id") String id,
+            @RequestBody(required = false) List<String> deviceIds) {
+        otaTaskService.retryDevices(id, deviceIds);
+        return Result.success(null);
+    }
+
     @Operation(summary = "设备上报升级进度")
     @PostMapping("/device/progress")
     public Result<Void> reportProgress(

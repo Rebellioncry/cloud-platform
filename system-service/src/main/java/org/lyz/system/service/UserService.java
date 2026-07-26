@@ -13,4 +13,5 @@ public interface UserService {
     void delete(String id);
     void resetPassword(String id, String password);
     void assignRoles(String userId, List<String> roleIds);
+    void migratePlaintextPasswords();
 }

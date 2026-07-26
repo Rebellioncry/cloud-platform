@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -190,10 +192,26 @@ public class OtaTaskServiceImpl implements OtaTaskService {
 
     @Override
     public List<IotOtaTaskDevice> listTaskDevices(String taskId) {
-        return taskDeviceDao.list(
+        List<IotOtaTaskDevice> list = taskDeviceDao.list(
                 new LambdaQueryWrapper<IotOtaTaskDevice>()
                         .eq(IotOtaTaskDevice::getTaskId, taskId)
                         .orderByDesc(IotOtaTaskDevice::getCreateTime));
+
+        List<String> nullVersionIds = list.stream()
+                .filter(d -> d.getCurrentVersion() == null)
+                .map(IotOtaTaskDevice::getDeviceId)
+                .toList();
+        if (!nullVersionIds.isEmpty()) {
+            Map<String, IotDevice> deviceMap = deviceDao.listByIds(nullVersionIds).stream()
+                    .collect(Collectors.toMap(IotDevice::getId, d -> d));
+            list.forEach(d -> {
+                if (d.getCurrentVersion() == null && deviceMap.containsKey(d.getDeviceId())) {
+                    d.setCurrentVersion(deviceMap.get(d.getDeviceId()).getFirmwareVersion());
+                }
+            });
+        }
+
+        return list;
     }
 
     @Override
@@ -246,6 +264,92 @@ public class OtaTaskServiceImpl implements OtaTaskService {
             }
             taskDao.updateByIdIgnoreTenant(task);
         }
+    }
+
+    @Override
+    @Transactional
+    public void retryDevices(String taskId, List<String> deviceIds) {
+        IotOtaTask task = getById(taskId);
+        if (task.getStatus() != 1 && task.getStatus() != 2 && task.getStatus() != 3) {
+            throw new BusinessException("当前任务状态不支持重试");
+        }
+
+        IotFirmware firmware = firmwareDao.getById(task.getFirmwareId());
+        if (firmware == null) {
+            throw new BusinessException("关联固件不存在");
+        }
+
+        LambdaQueryWrapper<IotOtaTaskDevice> wrapper = new LambdaQueryWrapper<IotOtaTaskDevice>()
+                .eq(IotOtaTaskDevice::getTaskId, taskId)
+                .eq(IotOtaTaskDevice::getStatus, 5);
+        if (deviceIds != null && !deviceIds.isEmpty()) {
+            wrapper.in(IotOtaTaskDevice::getDeviceId, deviceIds);
+        }
+        List<IotOtaTaskDevice> failedDevices = taskDeviceDao.list(wrapper);
+        if (failedDevices.isEmpty()) {
+            throw new BusinessException("没有需要重试的失败设备");
+        }
+
+        String downloadUrl = firmwareService.getDownloadUrl(task.getFirmwareId());
+        IotMqttConfig mqttConfig = findActiveMqttConfig();
+
+        for (IotOtaTaskDevice td : failedDevices) {
+            td.setStatus(1);
+            td.setProgress(0);
+            td.setErrorMessage(null);
+            td.setPushTime(LocalDateTime.now());
+            td.setCompleteTime(null);
+            taskDeviceDao.updateById(td);
+
+            if (mqttConfig != null) {
+                try {
+                    String topic = MqttTopicConstants.buildOtaUpgradeTopic(td.getProductKey(), td.getDeviceName());
+                    String payload = objectMapper.writeValueAsString(java.util.Map.of(
+                            "firmwareUrl", downloadUrl,
+                            "firmwareVersion", firmware.getFirmwareVersion(),
+                            "fileSize", firmware.getFileSize(),
+                            "fileMd5", firmware.getFileMd5() != null ? firmware.getFileMd5() : "",
+                            "taskId", taskId
+                    ));
+                    applicationContext.getBean(MqttClientManager.class).publish(mqttConfig.getId(), topic, payload, mqttConfig.getQos());
+                } catch (Exception e) {
+                    log.error("OTA重试推送失败: device={}", td.getDeviceName(), e);
+                    td.setStatus(5);
+                    td.setErrorMessage("推送失败: " + e.getMessage());
+                    td.setCompleteTime(LocalDateTime.now());
+                    taskDeviceDao.updateById(td);
+                }
+            }
+        }
+
+        if (task.getStatus() != 1) {
+            task.setStatus(1);
+            task.setStartTime(LocalDateTime.now());
+            task.setEndTime(null);
+        }
+        refreshTaskStats(task);
+        log.info("OTA重试: taskId={}, 重试设备数={}", taskId, failedDevices.size());
+    }
+
+    private void refreshTaskStats(IotOtaTask task) {
+        LambdaQueryWrapper<IotOtaTaskDevice> qw = new LambdaQueryWrapper<IotOtaTaskDevice>()
+                .eq(IotOtaTaskDevice::getTaskId, task.getId());
+        long total = taskDeviceDao.count(qw);
+        long success = taskDeviceDao.count(new LambdaQueryWrapper<IotOtaTaskDevice>()
+                .eq(IotOtaTaskDevice::getTaskId, task.getId())
+                .eq(IotOtaTaskDevice::getStatus, 4));
+        long fail = taskDeviceDao.count(new LambdaQueryWrapper<IotOtaTaskDevice>()
+                .eq(IotOtaTaskDevice::getTaskId, task.getId())
+                .eq(IotOtaTaskDevice::getStatus, 5));
+        task.setTotalCount((int) total);
+        task.setSuccessCount((int) success);
+        task.setFailCount((int) fail);
+        task.setProgress(total > 0 ? (int) ((success + fail) * 100 / total) : 0);
+        if (success + fail >= total) {
+            task.setStatus(2);
+            task.setEndTime(LocalDateTime.now());
+        }
+        taskDao.updateById(task);
     }
 
     private List<IotDevice> matchDevices(IotOtaTask task) {

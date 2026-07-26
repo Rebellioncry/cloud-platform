@@ -16,4 +16,5 @@ public interface OtaTaskService {
     void cancel(String id);
     List<IotOtaTaskDevice> listTaskDevices(String taskId);
     void updateDeviceProgress(String taskId, String deviceName, Integer progress, String status, String errorMessage);
+    void retryDevices(String taskId, List<String> deviceIds);
 }

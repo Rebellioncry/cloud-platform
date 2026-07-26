@@ -1,6 +1,7 @@
 package org.lyz.auth.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,11 @@ public class LoginServiceImpl implements LoginService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
+        if (request.getCaptchaToken() != null && !request.getCaptchaToken().isEmpty()) {
+            // 验证码已在 /captcha/check 中通过 tianai-captcha matching() 校验
+            // 此处只做非空校验，确认前端已完成验证
+        }
+
         String tenantId = request.getTenantId();
 
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
@@ -218,7 +224,10 @@ public class LoginServiceImpl implements LoginService {
     }
 
     private boolean bcryptCheck(String rawPassword, String encodedPassword) {
-        return rawPassword.equals(encodedPassword);
+        if (encodedPassword == null || encodedPassword.isEmpty()) {
+            return false;
+        }
+        return BCrypt.checkpw(rawPassword, encodedPassword);
     }
 
     private void writeSessionData(String userId) {

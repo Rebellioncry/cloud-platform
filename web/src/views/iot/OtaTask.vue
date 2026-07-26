@@ -46,6 +46,7 @@
         <template #default="{ row }">
           <el-button v-if="row.status === 0" link type="success" @click="handleStart(row)">启动</el-button>
           <el-button v-if="row.status === 1" link type="warning" @click="handleCancel(row)">取消</el-button>
+          <el-button v-if="(row.status === 2 || row.status === 3) && row.failCount > 0" link type="warning" @click="handleRetryAll(row)">重试失败</el-button>
           <el-button link type="primary" @click="handleDevices(row)">设备明细</el-button>
           <el-tooltip content="执行中的任务不能删除" :disabled="row.status !== 1" placement="top">
             <el-button link type="danger" :disabled="row.status === 1" @click="handleDelete(row)">删除</el-button>
@@ -131,6 +132,11 @@
         <el-table-column prop="errorMessage" label="错误信息" min-width="180" show-overflow-tooltip />
         <el-table-column prop="pushTime" label="推送时间" width="180" />
         <el-table-column prop="completeTime" label="完成时间" width="180" />
+        <el-table-column label="操作" width="80" fixed="right">
+          <template #default="{ row }">
+            <el-button v-if="row.status === 5" link type="warning" size="small" @click="handleRetrySingle(row)">重试</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-drawer>
   </div>
@@ -146,6 +152,7 @@ import {
   startOtaTask,
   cancelOtaTask,
   getOtaTaskDevices,
+  retryOtaDevices,
   getFirmwareList,
   getProductList,
   getDeviceList
@@ -161,6 +168,7 @@ const deviceSelectList = ref([])
 const searchName = ref('')
 const dialogVisible = ref(false)
 const drawerVisible = ref(false)
+const currentDrawerRow = ref(null)
 const formRef = ref()
 
 const pagination = reactive({ page: 1, size: 10, total: 0 })
@@ -283,6 +291,7 @@ const handleDelete = async (row) => {
 }
 
 const handleDevices = async (row) => {
+  currentDrawerRow.value = row
   drawerVisible.value = true
   deviceLoading.value = true
   deviceList.value = []
@@ -294,6 +303,50 @@ const handleDevices = async (row) => {
     ElMessage.error('加载设备明细失败')
   } finally {
     deviceLoading.value = false
+  }
+}
+
+const refreshDrawer = async () => {
+  if (!currentDrawerRow.value) return
+  deviceLoading.value = true
+  try {
+    const res = await getOtaTaskDevices(currentDrawerRow.value.id)
+    deviceList.value = res.data || []
+  } catch (e) {
+    console.error(e)
+  } finally {
+    deviceLoading.value = false
+  }
+  loadData()
+}
+
+const handleRetryAll = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要重试「${row.taskName}」中所有失败设备吗？`,
+      '重试确认',
+      { type: 'warning', confirmButtonText: '确定重试', cancelButtonText: '取消' }
+    )
+    await retryOtaDevices(row.id, [])
+    ElMessage.success('已发起重试')
+    loadData()
+  } catch (e) {
+    if (e !== 'cancel') console.error(e)
+  }
+}
+
+const handleRetrySingle = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要重试设备「${row.deviceName}」吗？`,
+      '重试确认',
+      { type: 'warning', confirmButtonText: '确定重试', cancelButtonText: '取消' }
+    )
+    await retryOtaDevices(row.taskId, [row.deviceId])
+    ElMessage.success('已发起重试')
+    refreshDrawer()
+  } catch (e) {
+    if (e !== 'cancel') console.error(e)
   }
 }
 

@@ -84,7 +84,7 @@ public class VerificationService {
             if ("sms".equalsIgnoreCase(type)) {
                 request.put("content", code);
             } else {
-                request.put("subject", "【Cloud Platform】登录验证码");
+                request.put("subject", "【物联网平台】登录验证码");
                 request.put("content", buildEmailContent(code));
             }
 
@@ -116,7 +116,7 @@ public class VerificationService {
 
     private String buildEmailContent(String code) {
         return "<div style='font-family: Arial, sans-serif; padding: 20px;'>"
-                + "<h3 style='color: #333;'>Cloud Platform 登录验证码</h3>"
+                + "<h3 style='color: #333;'>物联网平台登录验证码</h3>"
                 + "<p>您的验证码是：</p>"
                 + "<p style='font-size: 28px; font-weight: bold; color: #409EFF; letter-spacing: 5px;'>"
                 + code + "</p>"

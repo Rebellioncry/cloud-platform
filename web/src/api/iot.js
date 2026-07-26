@@ -254,3 +254,7 @@ export function getOtaTaskDevices(id) {
   return request({ url: `/iot/ota/task/${id}/devices`, method: 'get' })
 }
 
+export function retryOtaDevices(taskId, deviceIds) {
+  return request({ url: `/iot/ota/task/${taskId}/retry`, method: 'post', data: deviceIds })
+}
+

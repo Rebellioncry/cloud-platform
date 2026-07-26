@@ -15,6 +15,7 @@ import org.lyz.system.dao.SysTenantDao;
 import org.lyz.system.dao.SysUserDao;
 import org.lyz.system.dao.SysUserRoleDao;
 import org.lyz.system.service.UserService;
+import cn.hutool.crypto.digest.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
@@ -92,6 +93,9 @@ public class UserServiceImpl implements UserService {
         }
 
         SysUser user = toEntity(dto);
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            user.setPassword(BCrypt.hashpw(user.getPassword()));
+        }
         userDao.save(user);
 
         if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {
@@ -135,7 +139,7 @@ public class UserServiceImpl implements UserService {
         }
         LambdaUpdateWrapper<SysUser> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(SysUser::getId, id)
-               .set(SysUser::getPassword, password);
+               .set(SysUser::getPassword, BCrypt.hashpw(password));
         userDao.update(null, wrapper);
     }
 
@@ -192,5 +196,24 @@ public class UserServiceImpl implements UserService {
             user.setTenantId(dto.getTenantId());
         }
         return user;
+    }
+
+    @Override
+    public void migratePlaintextPasswords() {
+        List<SysUser> users = userDao.list();
+        int migrated = 0;
+        for (SysUser user : users) {
+            String pwd = user.getPassword();
+            if (pwd == null || pwd.isEmpty()) continue;
+            if (pwd.startsWith("$2a$") || pwd.startsWith("$2b$")) continue;
+            LambdaUpdateWrapper<SysUser> wrapper = new LambdaUpdateWrapper<>();
+            wrapper.eq(SysUser::getId, user.getId())
+                   .set(SysUser::getPassword, BCrypt.hashpw(pwd));
+            userDao.update(null, wrapper);
+            migrated++;
+        }
+        if (migrated > 0) {
+            System.out.println("[PasswordMigration] 已迁移 " + migrated + " 个明文密码为BCrypt");
+        }
     }
 }

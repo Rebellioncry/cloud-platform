@@ -17,4 +17,7 @@ public class LoginRequest {
 
     @Schema(description = "租户ID")
     private String tenantId;
+
+    @Schema(description = "验证码token")
+    private String captchaToken;
 }

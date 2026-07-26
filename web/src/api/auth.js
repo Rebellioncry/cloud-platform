@@ -1,10 +1,10 @@
 import request from '@/utils/request'
 
-export function login(username, password) {
+export function login(username, password, captchaToken) {
   return request({
     url: '/auth/login',
     method: 'post',
-    data: { username, password }
+    data: { username, password, captchaToken }
   })
 }
 
