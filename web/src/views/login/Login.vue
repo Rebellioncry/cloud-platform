@@ -139,10 +139,6 @@ const handleSendCode = async (type, target) => {
 const handlePasswordLogin = async () => {
   const valid = await passwordFormRef.value.validate().catch(() => false)
   if (!valid) return
-  if (!captchaVerified.value) {
-    ElMessage.warning('请先完成安全验证')
-    return
-  }
   loading.value = true
   try {
     const res = await loginApi(passwordForm.username, passwordForm.password, captchaToken.value)
@@ -151,45 +147,11 @@ const handlePasswordLogin = async () => {
     ElMessage.success('登录成功')
     router.push('/')
   } catch (error) {
-    console.error('登录失败:', error)
+    ElMessage.error(error?.response?.data?.message || error?.message || '登录失败')
   } finally {
     loading.value = false
   }
 }
-
-const initCaptcha = () => {
-  tacInstance = new CaptchaWebSdk(
-    {
-      requestCaptchaDataUrl: '/auth/captcha/gen',
-      validCaptchaUrl: '/auth/captcha/check',
-      bindEl: '#tac-captcha-box',
-      validSuccess: (res, captcha, tac) => {
-        captchaVerified.value = true
-        captchaToken.value = res.data
-        ElMessage.success('验证通过')
-      },
-      validFail: (res, captcha, tac) => {
-        captchaVerified.value = false
-        captchaToken.value = ''
-      }
-    },
-    {
-      logoUrl: null
-    }
-  )
-
-  tacInstance.init()
-}
-
-onMounted(() => {
-  initCaptcha()
-})
-
-onBeforeUnmount(() => {
-  if (tacInstance) {
-    tacInstance = null
-  }
-})
 
 const handleSmsLogin = async () => {
   const valid = await smsFormRef.value.validate().catch(() => false)
@@ -202,7 +164,7 @@ const handleSmsLogin = async () => {
     ElMessage.success('登录成功')
     router.push('/')
   } catch (error) {
-    console.error('登录失败:', error)
+    ElMessage.error(error?.response?.data?.message || error?.message || '登录失败')
   } finally {
     loading.value = false
   }
@@ -219,11 +181,54 @@ const handleEmailLogin = async () => {
     ElMessage.success('登录成功')
     router.push('/')
   } catch (error) {
-    console.error('登录失败:', error)
+    ElMessage.error(error?.response?.data?.message || error?.message || '登录失败')
   } finally {
     loading.value = false
   }
 }
+
+const initCaptcha = () => {
+  captchaVerified.value = false
+  captchaToken.value = ''
+
+  const captchaConfig = {
+    requestCaptchaDataUrl: '/auth/captcha/gen',
+    validCaptchaUrl: '/auth/captcha/check',
+    bindEl: '#tac-captcha-box',
+    validSuccess: (res, c, t) => {
+      captchaVerified.value = true
+      captchaToken.value = res.data
+      t.destroyWindow()
+      const box = document.getElementById('tac-captcha-box')
+      if (box) {
+        box.innerHTML = ''
+        box.style.height = 'auto'
+        box.style.overflow = 'visible'
+      }
+      document.querySelectorAll('[id*="captcha-web-sdk"]').forEach(el => el.remove())
+      ElMessage.success('验证通过')
+    },
+    validFail: (res, c, t) => {
+      captchaVerified.value = false
+      captchaToken.value = ''
+      ElMessage.error('验证失败，请重试')
+      t.reloadCaptcha()
+    }
+  }
+
+  tacInstance = new CaptchaWebSdk(captchaConfig, { logoUrl: null })
+  tacInstance.init()
+}
+
+onMounted(() => {
+  initCaptcha()
+})
+
+onBeforeUnmount(() => {
+  if (tacInstance) {
+    tacInstance = null
+  }
+})
 </script>
 
 <style scoped>
@@ -231,8 +236,18 @@ const handleEmailLogin = async () => {
   height: 100vh;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #0a1628 0%, #122a45 50%, #0f1d2e 100%);
+  justify-content: flex-end;
+  padding-right: 10%;
+  background: url('/login-bg.jpeg') no-repeat center center;
+  background-size: cover;
+  position: relative;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .login-box {
@@ -242,6 +257,8 @@ const handleEmailLogin = async () => {
   border-radius: 10px;
   border: 1px solid rgba(64, 158, 255, 0.15);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 1;
 }
 
 .login-header {
