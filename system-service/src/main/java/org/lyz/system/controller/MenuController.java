@@ -39,7 +39,7 @@ public class MenuController {
     @Operation(summary = "获取菜单详情", description = "根据ID获取菜单详细信息")
     @GetMapping("/{id}")
     public Result<MenuDTO> getById(
-            @Parameter(description = "菜单ID") @PathVariable String id) {
+            @Parameter(description = "菜单ID") @PathVariable(value = "id") String id) {
         return Result.success(menuService.getById(id));
     }
 
@@ -62,7 +62,7 @@ public class MenuController {
     @Operation(summary = "删除菜单", description = "根据ID删除菜单")
     @DeleteMapping("/{id}")
     public Result<Void> delete(
-            @Parameter(description = "菜单ID") @PathVariable String id) {
+            @Parameter(description = "菜单ID") @PathVariable(value = "id") String id) {
         menuService.delete(id);
         return Result.success();
     }

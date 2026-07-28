@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import org.lyz.common.core.context.TenantHelper;
+import org.lyz.common.core.context.UserContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.common.core.result.PageResult;
 import org.lyz.iot.dto.FirmwareDTO;
@@ -36,6 +38,12 @@ public class FirmwareServiceImpl implements FirmwareService {
     public PageResult<IotFirmware> list(int page, int size, String productId, String name) {
         Page<IotFirmware> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<IotFirmware> wrapper = new LambdaQueryWrapper<>();
+        if (!UserContext.isPlatformAdmin()) {
+            String tenantId = UserContext.getTenantId();
+            if (tenantId != null && !tenantId.isEmpty()) {
+                wrapper.eq(IotFirmware::getTenantId, tenantId);
+            }
+        }
         if (productId != null && !productId.isEmpty()) {
             wrapper.eq(IotFirmware::getProductId, productId);
         }
@@ -43,31 +51,37 @@ public class FirmwareServiceImpl implements FirmwareService {
             wrapper.like(IotFirmware::getFirmwareName, name);
         }
         wrapper.orderByDesc(IotFirmware::getCreateTime);
-        IPage<IotFirmware> result = firmwareDao.page(pageParam, wrapper);
-        return PageResult.of(result.getTotal(), page, size, result.getRecords());
+        IPage<IotFirmware>[] resultRef = new IPage[1];
+        TenantHelper.ignore(() -> resultRef[0] = firmwareDao.page(pageParam, wrapper));
+        return PageResult.of(resultRef[0].getTotal(), page, size, resultRef[0].getRecords());
     }
 
     @Override
     public IotFirmware getById(String id) {
-        IotFirmware firmware = firmwareDao.getById(id);
-        if (firmware == null) {
+        IotFirmware[] ref = new IotFirmware[1];
+        TenantHelper.ignore(() -> ref[0] = firmwareDao.getById(id));
+        if (ref[0] == null) {
             throw new BusinessException("固件不存在");
         }
-        return firmware;
+        return ref[0];
     }
 
     @Override
     @Transactional
     public IotFirmware create(FirmwareDTO dto, MultipartFile file) {
-        IotProduct product = productDao.getById(dto.getProductId());
-        if (product == null) {
+        IotProduct[] productRef = new IotProduct[1];
+        TenantHelper.ignore(() -> productRef[0] = productDao.getById(dto.getProductId()));
+        if (productRef[0] == null) {
             throw new BusinessException("产品不存在");
         }
+        IotProduct product = productRef[0];
 
-        IotFileStorage storage = fileStorageDao.getById(dto.getStorageId());
-        if (storage == null) {
+        IotFileStorage[] storageRef = new IotFileStorage[1];
+        TenantHelper.ignore(() -> storageRef[0] = fileStorageDao.getById(dto.getStorageId()));
+        if (storageRef[0] == null) {
             throw new BusinessException("存储配置不存在");
         }
+        IotFileStorage storage = storageRef[0];
 
         try {
             String ext = "";
@@ -85,6 +99,10 @@ public class FirmwareServiceImpl implements FirmwareService {
             }
 
             IotFirmware firmware = new IotFirmware();
+            String tenantId = UserContext.getTenantId();
+            if (tenantId != null && !tenantId.isEmpty()) {
+                firmware.setTenantId(tenantId);
+            }
             firmware.setProductId(dto.getProductId());
             firmware.setProductKey(product.getProductKey());
             firmware.setFirmwareName(dto.getFirmwareName());

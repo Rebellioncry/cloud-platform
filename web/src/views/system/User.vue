@@ -8,7 +8,7 @@
       <el-table-column type="index" label="#" width="60" :index="(i) => (pagination.page - 1) * pagination.size + i + 1" />
       <el-table-column prop="username" label="用户名" />
       <el-table-column prop="nickname" label="昵称" />
-      <el-table-column prop="tenantName" label="所属租户" width="150" />
+      <el-table-column v-if="isPlatformAdmin" prop="tenantName" label="所属租户" width="150" />
       <el-table-column prop="email" label="邮箱" />
       <el-table-column prop="mobile" label="手机号" />
       <el-table-column prop="status" label="状态" width="80">
@@ -50,7 +50,7 @@
         <el-form-item label="密码" prop="password" v-if="!form.id">
           <el-input v-model="form.password" type="password" show-password />
         </el-form-item>
-        <el-form-item label="所属租户" prop="tenantId">
+        <el-form-item label="所属租户" prop="tenantId" v-if="isPlatformAdmin">
           <el-select v-model="form.tenantId" placeholder="请选择租户" filterable style="width: 100%">
             <el-option
               v-for="t in tenantOptions"
@@ -113,6 +113,11 @@
 import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserList, addUser, updateUser, deleteUser, assignRoles, getRoleList, getTenantList } from '@/api/system'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+const isPlatformAdmin = computed(() => userStore.userInfo?.tenantScope === 'PLATFORM')
+const currentTenantId = computed(() => userStore.userInfo?.tenantId || '')
 
 const loading = ref(false)
 const tableData = ref([])
@@ -145,14 +150,15 @@ const form = reactive({
   roleIds: []
 })
 
-const rules = {
+const rules = computed(() => ({
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  tenantId: [{ required: true, message: '请选择租户', trigger: 'change' }],
+  password: [{ required: !isEdit.value, message: '请输入密码', trigger: 'blur' }],
+  tenantId: isPlatformAdmin.value ? [{ required: true, message: '请选择租户', trigger: 'change' }] : [],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }]
-}
+}))
 
 const loadTenantOptions = async () => {
+  if (!isPlatformAdmin.value) return
   try {
     const res = await getTenantList({ page: 1, size: 999 })
     tenantOptions.value = res.data?.records || res.data || []
@@ -195,7 +201,7 @@ const handleAdd = () => {
     email: '',
     mobile: '',
     status: 1,
-    tenantId: '',
+    tenantId: isPlatformAdmin.value ? '' : currentTenantId.value,
     roleIds: []
   })
   dialogVisible.value = true

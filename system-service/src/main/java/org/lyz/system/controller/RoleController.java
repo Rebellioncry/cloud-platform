@@ -33,7 +33,7 @@ public class RoleController {
     @Operation(summary = "获取角色详情", description = "根据ID获取角色详细信息")
     @GetMapping("/{id}")
     public Result<RoleDTO> getById(
-            @Parameter(description = "角色ID") @PathVariable String id) {
+            @Parameter(description = "角色ID") @PathVariable(value = "id") String id) {
         return Result.success(roleService.getById(id));
     }
 
@@ -56,7 +56,7 @@ public class RoleController {
     @Operation(summary = "删除角色", description = "根据ID删除角色")
     @DeleteMapping("/{id}")
     public Result<Void> delete(
-            @Parameter(description = "角色ID") @PathVariable String id) {
+            @Parameter(description = "角色ID") @PathVariable(value = "id") String id) {
         roleService.delete(id);
         return Result.success();
     }

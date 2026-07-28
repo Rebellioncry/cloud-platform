@@ -33,7 +33,7 @@ public class UserController {
     @Operation(summary = "获取用户详情", description = "根据ID获取用户详细信息")
     @GetMapping("/{id}")
     public Result<UserDTO> getById(
-            @Parameter(description = "用户ID") @PathVariable String id) {
+            @Parameter(description = "用户ID") @PathVariable(value = "id") String id) {
         return Result.success(userService.getById(id));
     }
 
@@ -56,7 +56,7 @@ public class UserController {
     @Operation(summary = "删除用户", description = "根据ID删除用户")
     @DeleteMapping("/{id}")
     public Result<Void> delete(
-            @Parameter(description = "用户ID") @PathVariable String id) {
+            @Parameter(description = "用户ID") @PathVariable(value = "id") String id) {
         userService.delete(id);
         return Result.success();
     }

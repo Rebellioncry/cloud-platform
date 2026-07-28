@@ -88,6 +88,13 @@
     
     <el-container>
       <el-header>
+        <div v-if="userStore.isImpersonating" class="impersonate-bar">
+          <span class="impersonate-text">
+            <el-icon><Warning /></el-icon>
+            正在以「{{ userStore.impersonateTenantName }}」租户管理员身份浏览
+          </span>
+          <el-button type="danger" size="small" @click="handleReturnImpersonate">返回管理后台</el-button>
+        </div>
         <div class="header-left">
           <el-breadcrumb separator="/">
             <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
@@ -122,9 +129,10 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { logout as logoutApi, getUserInfo } from '@/api/auth'
+import { returnFromImpersonate } from '@/api/system'
 import * as Icons from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -175,6 +183,19 @@ const handleCommand = async (command) => {
     }
     userStore.logout()
     router.push('/login')
+  }
+}
+
+const handleReturnImpersonate = async () => {
+  try {
+    await returnFromImpersonate()
+    userStore.stopImpersonate()
+    const res = await getUserInfo()
+    userStore.setUserInfo(res.data)
+    ElMessage.success('已返回管理后台')
+    router.push('/platform/tenant')
+  } catch (e) {
+    console.error('返回管理后台失败:', e)
   }
 }
 </script>
@@ -382,6 +403,28 @@ const handleCommand = async (command) => {
   background-color: #0f1d2e;
   border-bottom: 1px solid rgba(64, 158, 255, 0.1);
   height: 64px;
+  gap: 16px;
+}
+
+.impersonate-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(230, 162, 60, 0.15), rgba(230, 162, 60, 0.05));
+  border: 1px solid rgba(230, 162, 60, 0.4);
+  border-radius: 8px;
+  padding: 4px 12px;
+  flex-shrink: 0;
+}
+
+.impersonate-text {
+  color: #e6a23c;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .el-main {

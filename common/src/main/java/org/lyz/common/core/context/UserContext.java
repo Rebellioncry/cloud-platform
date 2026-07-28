@@ -101,8 +101,24 @@ public final class UserContext {
 
     // ==================== 便捷判断 ====================
 
+    /**
+     * 是否平台管理员（tenant_scope = PLATFORM）。
+     * 这是判断平台权限的主要方式，不再依赖角色名。
+     */
+    public static boolean isPlatformAdmin() {
+        String scope = TenantContext.getTenantScope();
+        if (scope != null) {
+            return "PLATFORM".equals(scope);
+        }
+        return "PLATFORM".equals(safeGet(() -> StpUtil.getSession().getString("tenantScope")));
+    }
+
+    /**
+     * @deprecated 使用 {@link #isPlatformAdmin()} 替代
+     */
+    @Deprecated
     public static boolean isSuperAdmin() {
-        return getRoleCodes().contains("SUPER_ADMIN");
+        return isPlatformAdmin();
     }
 
     public static boolean hasRole(String roleCode) {
@@ -114,8 +130,8 @@ public final class UserContext {
         return currentId != null && currentId.equals(userId);
     }
 
-    public static boolean isSuperAdminOrCurrentUser(String userId) {
-        return isSuperAdmin() || isCurrentUserId(userId);
+    public static boolean isPlatformAdminOrCurrentUser(String userId) {
+        return isPlatformAdmin() || isCurrentUserId(userId);
     }
 
     // ==================== Session CRUD（缓存管理） ====================

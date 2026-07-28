@@ -7,6 +7,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.lyz.common.core.context.TenantHelper;
+import org.lyz.common.core.context.UserContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.common.core.result.PageResult;
 import org.lyz.iot.dto.OtaTaskDTO;
@@ -44,32 +46,46 @@ public class OtaTaskServiceImpl implements OtaTaskService {
     public PageResult<IotOtaTask> list(int page, int size, String taskName) {
         Page<IotOtaTask> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<IotOtaTask> wrapper = new LambdaQueryWrapper<>();
+        if (!UserContext.isPlatformAdmin()) {
+            String tenantId = UserContext.getTenantId();
+            if (tenantId != null && !tenantId.isEmpty()) {
+                wrapper.eq(IotOtaTask::getTenantId, tenantId);
+            }
+        }
         if (taskName != null && !taskName.isEmpty()) {
             wrapper.like(IotOtaTask::getTaskName, taskName);
         }
         wrapper.orderByDesc(IotOtaTask::getCreateTime);
-        IPage<IotOtaTask> result = taskDao.page(pageParam, wrapper);
-        return PageResult.of(result.getTotal(), page, size, result.getRecords());
+        IPage<IotOtaTask>[] resultRef = new IPage[1];
+        TenantHelper.ignore(() -> resultRef[0] = taskDao.page(pageParam, wrapper));
+        return PageResult.of(resultRef[0].getTotal(), page, size, resultRef[0].getRecords());
     }
 
     @Override
     public IotOtaTask getById(String id) {
-        IotOtaTask task = taskDao.getById(id);
-        if (task == null) {
+        IotOtaTask[] ref = new IotOtaTask[1];
+        TenantHelper.ignore(() -> ref[0] = taskDao.getById(id));
+        if (ref[0] == null) {
             throw new BusinessException("升级任务不存在");
         }
-        return task;
+        return ref[0];
     }
 
     @Override
     @Transactional
     public IotOtaTask create(OtaTaskDTO dto) {
-        IotFirmware firmware = firmwareDao.getById(dto.getFirmwareId());
-        if (firmware == null) {
+        IotFirmware[] firmwareRef = new IotFirmware[1];
+        TenantHelper.ignore(() -> firmwareRef[0] = firmwareDao.getById(dto.getFirmwareId()));
+        if (firmwareRef[0] == null) {
             throw new BusinessException("固件不存在或未发布");
         }
+        IotFirmware firmware = firmwareRef[0];
 
         IotOtaTask task = new IotOtaTask();
+        String tenantId = UserContext.getTenantId();
+        if (tenantId != null && !tenantId.isEmpty()) {
+            task.setTenantId(tenantId);
+        }
         task.setTaskName(dto.getTaskName());
         task.setFirmwareId(dto.getFirmwareId());
         task.setProductId(dto.getProductId());
@@ -104,10 +120,12 @@ public class OtaTaskServiceImpl implements OtaTaskService {
             throw new BusinessException("任务已在执行中");
         }
 
-        IotFirmware firmware = firmwareDao.getById(task.getFirmwareId());
-        if (firmware == null) {
+        IotFirmware[] firmwareRef = new IotFirmware[1];
+        TenantHelper.ignore(() -> firmwareRef[0] = firmwareDao.getById(task.getFirmwareId()));
+        if (firmwareRef[0] == null) {
             throw new BusinessException("关联固件不存在");
         }
+        IotFirmware firmware = firmwareRef[0];
 
         List<IotDevice> devices = matchDevices(task);
         if (devices.isEmpty()) {
@@ -274,10 +292,12 @@ public class OtaTaskServiceImpl implements OtaTaskService {
             throw new BusinessException("当前任务状态不支持重试");
         }
 
-        IotFirmware firmware = firmwareDao.getById(task.getFirmwareId());
-        if (firmware == null) {
+        IotFirmware[] firmwareRef = new IotFirmware[1];
+        TenantHelper.ignore(() -> firmwareRef[0] = firmwareDao.getById(task.getFirmwareId()));
+        if (firmwareRef[0] == null) {
             throw new BusinessException("关联固件不存在");
         }
+        IotFirmware firmware = firmwareRef[0];
 
         LambdaQueryWrapper<IotOtaTaskDevice> wrapper = new LambdaQueryWrapper<IotOtaTaskDevice>()
                 .eq(IotOtaTaskDevice::getTaskId, taskId)

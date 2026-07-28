@@ -17,6 +17,13 @@
       <el-table-column prop="component" label="组件路径" />
       <el-table-column prop="perms" label="权限标识" />
       <el-table-column prop="icon" label="图标" width="100" />
+      <el-table-column prop="scope" label="作用域" width="80" v-if="isPlatformAdmin">
+        <template #default="{ row }">
+          <el-tag :type="row.scope === 'PLATFORM' ? 'danger' : 'success'" size="small">
+            {{ row.scope === 'PLATFORM' ? '平台' : '租户' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="orderNum" label="排序" width="80" />
       <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column prop="visible" label="状态" width="80">
@@ -68,6 +75,12 @@
         <el-form-item label="图标" prop="icon">
           <el-input v-model="form.icon" />
         </el-form-item>
+        <el-form-item label="作用域" prop="scope" v-if="isPlatformAdmin">
+          <el-radio-group v-model="form.scope">
+            <el-radio label="PLATFORM">平台</el-radio>
+            <el-radio label="TENANT">租户</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="排序" prop="orderNum">
           <el-input-number v-model="form.orderNum" :min="0" />
         </el-form-item>
@@ -90,6 +103,10 @@
 import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMenuTree, addMenu, updateMenu, deleteMenu } from '@/api/system'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+const isPlatformAdmin = computed(() => userStore.userInfo?.tenantScope === 'PLATFORM')
 
 const loading = ref(false)
 const tableData = ref([])
@@ -109,7 +126,8 @@ const form = reactive({
   perms: '',
   icon: '',
   orderNum: 0,
-  visible: 1
+  visible: 1,
+  scope: 'TENANT'
 })
 
 const rules = {
@@ -120,8 +138,12 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await getMenuTree()
-    tableData.value = res.data || []
-    menuTreeData.value = [{ id: 0, menuName: '顶级菜单', children: res.data || [] }]
+    let tree = res.data || []
+    if (!isPlatformAdmin.value) {
+      tree = tree.filter(m => m.scope === 'TENANT')
+    }
+    tableData.value = tree
+    menuTreeData.value = [{ id: 0, menuName: '顶级菜单', children: tree }]
   } catch (error) {
     console.error('加载数据失败:', error)
   } finally {
@@ -130,7 +152,7 @@ const loadData = async () => {
 }
 
 const handleAdd = (parent) => {
-  Object.assign(form, { id: null, parentId: parent?.id || 0, menuType: 1, menuName: '', path: '', component: '', perms: '', icon: '', orderNum: 0, visible: 1 })
+  Object.assign(form, { id: null, parentId: parent?.id || 0, menuType: 1, menuName: '', path: '', component: '', perms: '', icon: '', orderNum: 0, visible: 1, scope: 'TENANT' })
   dialogVisible.value = true
 }
 

@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import org.lyz.common.core.context.TenantHelper;
+import org.lyz.common.core.context.UserContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.common.core.result.PageResult;
 import org.lyz.iot.dto.DeviceDTO;
@@ -29,6 +31,12 @@ public class DeviceServiceImpl implements DeviceService {
     public PageResult<IotDevice> list(int page, int size, String productId, String name, Integer status) {
         Page<IotDevice> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<IotDevice> wrapper = new LambdaQueryWrapper<>();
+        if (!UserContext.isPlatformAdmin()) {
+            String tenantId = UserContext.getTenantId();
+            if (tenantId != null && !tenantId.isEmpty()) {
+                wrapper.eq(IotDevice::getTenantId, tenantId);
+            }
+        }
         if (productId != null) {
             wrapper.eq(IotDevice::getProductId, productId);
         }
@@ -39,27 +47,35 @@ public class DeviceServiceImpl implements DeviceService {
             wrapper.eq(IotDevice::getStatus, status);
         }
         wrapper.orderByDesc(IotDevice::getCreateTime);
-        IPage<IotDevice> result = deviceDao.page(pageParam, wrapper);
-        return PageResult.of(result.getTotal(), page, size, result.getRecords());
+        IPage<IotDevice>[] resultRef = new IPage[1];
+        TenantHelper.ignore(() -> resultRef[0] = deviceDao.page(pageParam, wrapper));
+        return PageResult.of(resultRef[0].getTotal(), page, size, resultRef[0].getRecords());
     }
 
     @Override
     public IotDevice getById(String id) {
-        IotDevice device = deviceDao.getById(id);
-        if (device == null) {
+        IotDevice[] ref = new IotDevice[1];
+        TenantHelper.ignore(() -> ref[0] = deviceDao.getById(id));
+        if (ref[0] == null) {
             throw new BusinessException("设备不存在");
         }
-        return device;
+        return ref[0];
     }
 
     @Override
     @Transactional
     public IotDevice create(DeviceDTO dto) {
-        IotProduct product = productDao.getById(dto.getProductId());
-        if (product == null) {
+        IotProduct[] productRef = new IotProduct[1];
+        TenantHelper.ignore(() -> productRef[0] = productDao.getById(dto.getProductId()));
+        if (productRef[0] == null) {
             throw new BusinessException("产品不存在");
         }
+        IotProduct product = productRef[0];
         IotDevice device = new IotDevice();
+        String tenantId = UserContext.getTenantId();
+        if (tenantId != null && !tenantId.isEmpty()) {
+            device.setTenantId(tenantId);
+        }
         device.setProductId(dto.getProductId());
         device.setProductKey(product.getProductKey());
         device.setDeviceName(dto.getDeviceName());

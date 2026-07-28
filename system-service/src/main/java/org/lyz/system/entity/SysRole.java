@@ -13,6 +13,10 @@ import org.lyz.common.core.entity.BaseEntity;
 public class SysRole extends BaseEntity {
     @Schema(description = "租户ID")
     private String tenantId;
+    @Schema(description = "角色作用域: PLATFORM=平台角色, TENANT=租户角色")
+    private String scope;
+    @Schema(description = "系统内置: 0=否, 1=是")
+    private Integer isSystem;
     @Schema(description = "角色编码")
     private String roleCode;
     @Schema(description = "角色名称")

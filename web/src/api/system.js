@@ -182,3 +182,96 @@ export function getAuditLogList(params) {
     params
   })
 }
+
+// 平台管理
+export function getPlatformTenantList(params) {
+  return request({
+    url: '/system/platform/tenant/list',
+    method: 'get',
+    params
+  })
+}
+
+export function getPlatformTenantDetail(id) {
+  return request({
+    url: `/system/platform/tenant/${id}`,
+    method: 'get'
+  })
+}
+
+export function createPlatformTenant(data) {
+  return request({
+    url: '/system/platform/tenant',
+    method: 'post',
+    data
+  })
+}
+
+export function createTenantAdmin(tenantId, data) {
+  return request({
+    url: `/system/platform/tenant/${tenantId}/admin`,
+    method: 'post',
+    data
+  })
+}
+
+export function updateTenantStatus(tenantId, status) {
+  return request({
+    url: `/system/platform/tenant/${tenantId}/status`,
+    method: 'put',
+    params: { status }
+  })
+}
+
+export function impersonateTenant(tenantId) {
+  return request({
+    url: `/system/platform/tenant/${tenantId}/impersonate`,
+    method: 'post'
+  })
+}
+
+export function returnFromImpersonate() {
+  return request({
+    url: '/system/platform/impersonate/return',
+    method: 'post'
+  })
+}
+
+// 套餐管理
+export function getPackageList(params) {
+  return request({
+    url: '/system/platform/package/list',
+    method: 'get',
+    params
+  })
+}
+
+export function getAllPackages() {
+  return request({
+    url: '/system/platform/package/all',
+    method: 'get'
+  })
+}
+
+export function createPackage(data) {
+  return request({
+    url: '/system/platform/package',
+    method: 'post',
+    data
+  })
+}
+
+export function updatePackage(data) {
+  return request({
+    url: '/system/platform/package',
+    method: 'put',
+    data
+  })
+}
+
+export function deletePackage(id) {
+  return request({
+    url: `/system/platform/package/${id}`,
+    method: 'delete'
+  })
+}

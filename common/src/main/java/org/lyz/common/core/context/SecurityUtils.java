@@ -1,7 +1,5 @@
 package org.lyz.common.core.context;
 
-import java.util.List;
-
 /**
  * @deprecated 请使用 {@link UserContext}，功能更全且支持缓存 CRUD。
  */
@@ -9,7 +7,7 @@ import java.util.List;
 public class SecurityUtils {
 
     public static boolean isSuperAdmin() {
-        return UserContext.isSuperAdmin();
+        return UserContext.isPlatformAdmin();
     }
 
     public static boolean isCurrentUserId(String userId) {
@@ -17,11 +15,6 @@ public class SecurityUtils {
     }
 
     public static boolean isSuperAdminOrCurrentUser(String userId) {
-        return UserContext.isSuperAdminOrCurrentUser(userId);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<String> getRoleCodes() {
-        return UserContext.getRoleCodes();
+        return UserContext.isPlatformAdminOrCurrentUser(userId);
     }
 }

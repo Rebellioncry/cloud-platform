@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import org.lyz.common.core.context.UserContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.system.dto.MenuDTO;
 import org.lyz.system.entity.SysMenu;
@@ -25,6 +26,9 @@ public class MenuServiceImpl implements MenuService {
     public PageResult<SysMenu> list(int page, int size) {
         Page<SysMenu> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
+        if (!UserContext.isPlatformAdmin()) {
+            wrapper.eq(SysMenu::getScope, "TENANT");
+        }
         wrapper.orderByAsc(SysMenu::getOrderNum);
         IPage<SysMenu> result = menuDao.page(pageParam, wrapper);
         return PageResult.of(result.getTotal(), page, size, result.getRecords());
@@ -32,7 +36,12 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     public List<MenuDTO> getMenuTree() {
-        List<SysMenu> menus = listAll();
+        LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
+        if (!UserContext.isPlatformAdmin()) {
+            wrapper.eq(SysMenu::getScope, "TENANT");
+        }
+        wrapper.orderByAsc(SysMenu::getOrderNum);
+        List<SysMenu> menus = menuDao.list(wrapper);
         return buildTree(menus, "0");
     }
 
@@ -62,18 +71,30 @@ public class MenuServiceImpl implements MenuService {
         if (dto.getId() == null) {
             throw new BusinessException("菜单ID不能为空");
         }
+        checkMenuScope(dto.getId());
         SysMenu menu = toEntity(dto);
         menuDao.updateById(menu);
     }
 
     @Override
     public void delete(String id) {
+        checkMenuScope(id);
         LambdaQueryWrapper<SysMenu> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysMenu::getParentId, id);
         if (menuDao.count(wrapper) > 0) {
             throw new BusinessException("存在子菜单，无法删除");
         }
         menuDao.removeById(id);
+    }
+
+    private void checkMenuScope(String menuId) {
+        if (UserContext.isPlatformAdmin()) {
+            return;
+        }
+        SysMenu menu = menuDao.getById(menuId);
+        if (menu != null && "PLATFORM".equals(menu.getScope())) {
+            throw new BusinessException("不允许操作平台菜单");
+        }
     }
 
     private List<MenuDTO> buildTree(List<SysMenu> menus, String parentId) {
@@ -93,6 +114,7 @@ public class MenuServiceImpl implements MenuService {
         dto.setParentId(menu.getParentId());
         dto.setMenuName(menu.getMenuName());
         dto.setMenuType(menu.getMenuType());
+        dto.setScope(menu.getScope());
         dto.setPath(menu.getPath());
         dto.setComponent(menu.getComponent());
         dto.setIcon(menu.getIcon());
@@ -110,6 +132,7 @@ public class MenuServiceImpl implements MenuService {
         menu.setParentId(dto.getParentId() != null ? dto.getParentId() : "0");
         menu.setMenuName(dto.getMenuName());
         menu.setMenuType(dto.getMenuType() != null ? dto.getMenuType() : 1);
+        menu.setScope(dto.getScope() != null ? dto.getScope() : "TENANT");
         menu.setPath(dto.getPath());
         menu.setComponent(dto.getComponent());
         menu.setIcon(dto.getIcon());

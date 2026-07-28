@@ -22,6 +22,8 @@ public class MenuDTO {
     
     @Schema(description = "菜单类型")
     private Integer menuType;
+    @Schema(description = "作用域: PLATFORM=平台, TENANT=租户")
+    private String scope;
     @Schema(description = "路由地址")
     private String path;
     @Schema(description = "组件路径")

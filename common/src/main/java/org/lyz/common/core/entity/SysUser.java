@@ -18,6 +18,8 @@ import lombok.NoArgsConstructor;
 public class SysUser extends BaseEntity {
     @Schema(description = "租户ID")
     private String tenantId;
+    @Schema(description = "租户身份: PLATFORM=平台用户, TENANT=租户用户")
+    private String tenantScope;
     @Schema(description = "用户名")
     private String username;
     @Schema(description = "密码")

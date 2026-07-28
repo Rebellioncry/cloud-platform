@@ -22,6 +22,8 @@ public class SysTenant extends BaseEntity {
     private String mobile;
     @Schema(description = "邮箱")
     private String email;
+    @Schema(description = "租户套餐ID")
+    private String packageId;
     @Schema(description = "状态")
     private Integer status;
     @Schema(description = "过期时间")

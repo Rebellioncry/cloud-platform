@@ -6,8 +6,13 @@ export const useUserStore = defineStore('user', () => {
   const token = ref(getToken() || '')
   const userInfo = ref(null)
   const permissions = ref([])
+  const impersonating = ref(JSON.parse(localStorage.getItem('impersonate') || 'null'))
 
   const isLoggedIn = computed(() => !!token.value)
+  const isPlatformAdmin = computed(() => userInfo.value?.tenantScope === 'PLATFORM')
+  const tenantScope = computed(() => userInfo.value?.tenantScope || 'TENANT')
+  const isImpersonating = computed(() => !!impersonating.value)
+  const impersonateTenantName = computed(() => impersonating.value?.tenantName || '')
 
   function setUserToken(newToken) {
     token.value = newToken
@@ -23,7 +28,29 @@ export const useUserStore = defineStore('user', () => {
     token.value = ''
     userInfo.value = null
     permissions.value = []
+    impersonating.value = null
+    localStorage.removeItem('impersonate')
     removeToken()
+  }
+
+  function startImpersonate(data) {
+    impersonating.value = {
+      originalToken: token.value,
+      ...data
+    }
+    token.value = data.impersonateToken
+    setToken(data.impersonateToken)
+    localStorage.setItem('impersonate', JSON.stringify(impersonating.value))
+  }
+
+  function stopImpersonate() {
+    const orig = impersonating.value?.originalToken
+    impersonating.value = null
+    localStorage.removeItem('impersonate')
+    if (orig) {
+      token.value = orig
+      setToken(orig)
+    }
   }
 
   function hasPermission(permission) {
@@ -35,9 +62,16 @@ export const useUserStore = defineStore('user', () => {
     userInfo,
     permissions,
     isLoggedIn,
+    isPlatformAdmin,
+    tenantScope,
+    isImpersonating,
+    impersonateTenantName,
+    impersonating,
     setUserToken,
     setUserInfo,
     logout,
-    hasPermission
+    hasPermission,
+    startImpersonate,
+    stopImpersonate
   }
 })

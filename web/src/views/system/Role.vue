@@ -18,9 +18,21 @@
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column prop="remark" label="备注" />
+      <el-table-column prop="scope" label="作用域" width="100">
+        <template #default="{ row }">
+          <el-tag :type="row.scope === 'PLATFORM' ? 'danger' : 'success'" size="small">
+            {{ row.scope === 'PLATFORM' ? '平台' : '租户' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="isSystem" label="系统内置" width="90">
+        <template #default="{ row }">
+          <el-tag v-if="row.isSystem === 1" type="info" size="small">内置</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="250" fixed="right">
         <template #default="{ row }">
-          <template v-if="row.roleCode !== 'SUPER_ADMIN'">
+          <template v-if="row.isSystem !== 1">
             <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
             <el-button link type="primary" @click="handleMenus(row)">菜单</el-button>
             <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
@@ -82,6 +94,10 @@
 import { ref, reactive, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getRoleList, addRole, updateRole, deleteRole, getMenuTree, assignMenus, getRole } from '@/api/system'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+const isPlatformAdmin = computed(() => userStore.userInfo?.tenantScope === 'PLATFORM')
 
 const loading = ref(false)
 const tableData = ref([])
@@ -136,7 +152,11 @@ const handleMenus = async (row) => {
   currentRoleId = row.id
   try {
     const [treeRes, roleRes] = await Promise.all([getMenuTree(), getRole(row.id)])
-    menuTreeData.value = treeRes.data || []
+    let tree = treeRes.data || []
+    if (!isPlatformAdmin.value) {
+      tree = filterTenantMenus(tree)
+    }
+    menuTreeData.value = tree
     menuDialogVisible.value = true
     await nextTick()
     if (menuTreeRef.value) {
@@ -147,6 +167,16 @@ const handleMenus = async (row) => {
   } catch (error) {
     console.error('加载菜单失败:', error)
   }
+}
+
+const filterTenantMenus = (menus) => {
+  return menus
+    .filter(m => m.scope === 'TENANT')
+    .map(m => ({
+      ...m,
+      children: m.children ? filterTenantMenus(m.children) : []
+    }))
+    .filter(m => m.children?.length > 0 || m.menuType !== 0 || m.path)
 }
 
 const handleSubmitMenus = async () => {

@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.lyz.common.core.context.TenantHelper;
+import org.lyz.common.core.context.UserContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.common.core.result.PageResult;
 import org.lyz.iot.dto.MqttConfigDTO;
@@ -30,27 +32,39 @@ public class MqttConfigServiceImpl implements MqttConfigService {
     public PageResult<IotMqttConfig> list(int page, int size, String name) {
         Page<IotMqttConfig> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<IotMqttConfig> wrapper = new LambdaQueryWrapper<>();
+        if (!UserContext.isPlatformAdmin()) {
+            String tenantId = UserContext.getTenantId();
+            if (tenantId != null && !tenantId.isEmpty()) {
+                wrapper.eq(IotMqttConfig::getTenantId, tenantId);
+            }
+        }
         if (name != null && !name.isEmpty()) {
             wrapper.like(IotMqttConfig::getName, name);
         }
         wrapper.orderByDesc(IotMqttConfig::getCreateTime);
-        IPage<IotMqttConfig> result = mqttConfigDao.page(pageParam, wrapper);
-        return PageResult.of(result.getTotal(), page, size, result.getRecords());
+        IPage<IotMqttConfig>[] resultRef = new IPage[1];
+        TenantHelper.ignore(() -> resultRef[0] = mqttConfigDao.page(pageParam, wrapper));
+        return PageResult.of(resultRef[0].getTotal(), page, size, resultRef[0].getRecords());
     }
 
     @Override
     public IotMqttConfig getById(String id) {
-        IotMqttConfig config = mqttConfigDao.getById(id);
-        if (config == null) {
+        IotMqttConfig[] ref = new IotMqttConfig[1];
+        TenantHelper.ignore(() -> ref[0] = mqttConfigDao.getById(id));
+        if (ref[0] == null) {
             throw new BusinessException("MQTT配置不存在");
         }
-        return config;
+        return ref[0];
     }
 
     @Override
     @Transactional
     public IotMqttConfig create(MqttConfigDTO dto) {
         IotMqttConfig config = new IotMqttConfig();
+        String tenantId = UserContext.getTenantId();
+        if (tenantId != null && !tenantId.isEmpty()) {
+            config.setTenantId(tenantId);
+        }
         config.setName(dto.getName());
         config.setDescription(dto.getDescription());
         config.setBroker(dto.getBroker());

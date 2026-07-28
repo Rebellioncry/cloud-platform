@@ -43,6 +43,18 @@ const routes = [
         meta: { title: '租户管理', icon: 'OfficeBuilding' }
       },
       {
+        path: 'platform/tenant',
+        name: 'PlatformTenant',
+        component: () => import('@/views/platform/Tenant.vue'),
+        meta: { title: '平台租户管理', icon: 'OfficeBuilding' }
+      },
+      {
+        path: 'platform/package',
+        name: 'PlatformPackage',
+        component: () => import('@/views/platform/Package.vue'),
+        meta: { title: '租户套餐管理', icon: 'PriceTag' }
+      },
+      {
         path: 'system/audit',
         name: 'AuditLog',
         component: () => import('@/views/system/AuditLog.vue'),

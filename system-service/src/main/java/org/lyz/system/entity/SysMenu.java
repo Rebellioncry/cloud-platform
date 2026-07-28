@@ -11,8 +11,8 @@ import org.lyz.common.core.entity.BaseEntity;
 @TableName("sys_menu")
 @Schema(description = "菜单")
 public class SysMenu extends BaseEntity {
-    @Schema(description = "租户ID")
-    private String tenantId;
+    @Schema(description = "菜单作用域: PLATFORM=平台菜单, TENANT=租户菜单")
+    private String scope;
     @Schema(description = "父菜单ID")
     private String parentId;
     @Schema(description = "菜单类型")

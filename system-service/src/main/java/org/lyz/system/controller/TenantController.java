@@ -33,7 +33,7 @@ public class TenantController {
     @Operation(summary = "获取租户详情", description = "根据ID获取租户详细信息")
     @GetMapping("/{id}")
     public Result<TenantDTO> getById(
-            @Parameter(description = "租户ID") @PathVariable String id) {
+            @Parameter(description = "租户ID") @PathVariable(value = "id") String id) {
         return Result.success(tenantService.getById(id));
     }
 
@@ -56,7 +56,7 @@ public class TenantController {
     @Operation(summary = "删除租户", description = "根据ID删除租户")
     @DeleteMapping("/{id}")
     public Result<Void> delete(
-            @Parameter(description = "租户ID") @PathVariable String id) {
+            @Parameter(description = "租户ID") @PathVariable(value = "id") String id) {
         tenantService.delete(id);
         return Result.success();
     }

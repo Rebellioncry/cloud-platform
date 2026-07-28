@@ -27,6 +27,8 @@ public class TenantDTO {
     private String email;
     @Schema(description = "状态")
     private Integer status;
+    @Schema(description = "租户套餐ID")
+    private String packageId;
     @Schema(description = "过期时间")
     private LocalDateTime expireTime;
     @Schema(description = "备注")

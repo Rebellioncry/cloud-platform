@@ -27,6 +27,8 @@ public class UserInfo {
     private String avatar;
     @Schema(description = "租户ID")
     private String tenantId;
+    @Schema(description = "租户身份: PLATFORM=平台用户, TENANT=租户用户")
+    private String tenantScope;
     @Schema(description = "角色列表")
     private List<String> roles;
     @Schema(description = "菜单列表")

@@ -198,14 +198,9 @@ const initCaptcha = () => {
     validSuccess: (res, c, t) => {
       captchaVerified.value = true
       captchaToken.value = res.data
-      t.destroyWindow()
-      const box = document.getElementById('tac-captcha-box')
-      if (box) {
-        box.innerHTML = ''
-        box.style.height = 'auto'
-        box.style.overflow = 'visible'
-      }
-      document.querySelectorAll('[id*="captcha-web-sdk"]').forEach(el => el.remove())
+      document.querySelectorAll('#tac-captcha-box *').forEach(el => {
+        el.style.pointerEvents = 'none'
+      })
       ElMessage.success('验证通过')
     },
     validFail: (res, c, t) => {

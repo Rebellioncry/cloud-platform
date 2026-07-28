@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 -- =============================================
 -- Nacos Config Database
 -- =============================================
@@ -162,6 +164,7 @@ CREATE TABLE IF NOT EXISTS sys_tenant (
     contact VARCHAR(50) DEFAULT NULL,
     mobile VARCHAR(20) DEFAULT NULL,
     email VARCHAR(100) DEFAULT NULL,
+    package_id VARCHAR(32) DEFAULT NULL COMMENT '租户套餐ID',
     status TINYINT DEFAULT 1,
     expire_time DATETIME DEFAULT NULL,
     remark VARCHAR(500) DEFAULT NULL,
@@ -173,9 +176,23 @@ CREATE TABLE IF NOT EXISTS sys_tenant (
     UNIQUE KEY uk_tenant_code (tenant_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS sys_tenant_package (
+    id VARCHAR(32) NOT NULL,
+    package_name VARCHAR(100) NOT NULL COMMENT '套餐名称',
+    menu_ids TEXT DEFAULT NULL COMMENT '关联的菜单ID(逗号分隔)',
+    status TINYINT DEFAULT 1 COMMENT '状态 1正常 0停用',
+    remark VARCHAR(500) DEFAULT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS sys_user (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
+    tenant_scope VARCHAR(20) NOT NULL DEFAULT 'TENANT' COMMENT 'PLATFORM=平台用户, TENANT=租户用户',
     username VARCHAR(50) NOT NULL,
     password VARCHAR(100) DEFAULT NULL,
     nickname VARCHAR(50) DEFAULT NULL,
@@ -193,7 +210,9 @@ CREATE TABLE IF NOT EXISTS sys_user (
 
 CREATE TABLE IF NOT EXISTS sys_role (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
+    scope VARCHAR(20) NOT NULL DEFAULT 'TENANT' COMMENT 'PLATFORM=平台角色, TENANT=租户角色',
+    is_system TINYINT(1) NOT NULL DEFAULT 0 COMMENT '系统内置角色,不可删除',
     role_code VARCHAR(50) NOT NULL,
     role_name VARCHAR(50) NOT NULL,
     role_sort INT DEFAULT 0,
@@ -210,7 +229,7 @@ CREATE TABLE IF NOT EXISTS sys_role (
 
 CREATE TABLE IF NOT EXISTS sys_menu (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    scope VARCHAR(20) NOT NULL DEFAULT 'TENANT' COMMENT 'PLATFORM=平台菜单, TENANT=租户菜单',
     parent_id VARCHAR(32) DEFAULT '0',
     menu_type TINYINT NOT NULL DEFAULT 1,
     menu_name VARCHAR(50) NOT NULL,
@@ -247,26 +266,26 @@ CREATE TABLE IF NOT EXISTS sys_role_menu (
 CREATE TABLE IF NOT EXISTS sys_social (
     id VARCHAR(32) NOT NULL,
     user_id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     platform VARCHAR(20) NOT NULL,
     openid VARCHAR(100) NOT NULL,
     unionid VARCHAR(100) DEFAULT NULL,
     nickname VARCHAR(50) DEFAULT NULL,
     avatar VARCHAR(255) DEFAULT NULL,
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT DEFAULT 0,
+    version INT DEFAULT 0,
     PRIMARY KEY (id),
     UNIQUE KEY uk_platform_openid_tenant (platform, openid, tenant_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default data (short string IDs)
-SET @tenant_id = '1';
 SET @admin_user_id = '2';
 SET @admin_role_id = '3';
-SET @menu_system = '10';
-SET @menu_user = '11';
-SET @menu_role = '12';
-SET @menu_menu = '13';
-SET @menu_tenant = '14';
+SET @menu_platform = '01';
+SET @menu_platform_tenant = '02';
+SET @menu_platform_package = '03';
 SET @menu_dashboard = '15';
 SET @menu_iot = '20';
 SET @menu_iot_product = '21';
@@ -276,38 +295,56 @@ SET @menu_iot_rule = '24';
 SET @menu_iot_storage = '25';
 SET @menu_iot_firmware = '26';
 SET @menu_iot_ota = '27';
+SET @menu_system = '10';
+SET @menu_user = '11';
+SET @menu_role = '12';
+SET @menu_menu = '13';
+SET @menu_tenant = '14';
 SET @menu_audit = '16';
+SET @pkg_default = 'P1';
 
-INSERT INTO sys_tenant (id, tenant_code, tenant_name, contact, mobile, email, status)
-VALUES (@tenant_id, 'DEFAULT', 'Default Tenant', 'Admin', '13800138000', 'admin@example.com', 1);
+INSERT INTO sys_tenant_package (id, package_name, menu_ids, status, remark)
+VALUES (@pkg_default, 'IoT标准套餐', '15,20,21,22,23,24,25,26,27,10,11,12,13,14,16', 1, '包含IoT平台全部功能及系统管理');
 
-INSERT INTO sys_user (id, tenant_id, username, password, nickname, email, mobile, status)
-VALUES (@admin_user_id, '', 'admin', '123456', 'Admin', 'admin@example.com', '13800138000', 1);
+INSERT INTO sys_user (id, tenant_id, tenant_scope, username, password, nickname, email, mobile, status)
+VALUES (@admin_user_id, '', 'PLATFORM', 'admin', '123456', 'Admin', 'admin@example.com', '13800138000', 1);
 
-INSERT INTO sys_role (id, tenant_id, role_code, role_name, role_sort, status, data_scope)
-VALUES (@admin_role_id, @tenant_id, 'SUPER_ADMIN', 'Super Admin', 1, 1, 1);
+INSERT INTO sys_role (id, tenant_id, scope, is_system, role_code, role_name, role_sort, status, data_scope)
+VALUES (@admin_role_id, '', 'PLATFORM', 1, 'SUPER_ADMIN', '超级管理员', 1, 1, 1);
 
-INSERT INTO sys_menu (id, tenant_id, parent_id, menu_type, menu_name, path, component, icon, perms, order_num) VALUES
-(@menu_dashboard, @tenant_id, '0', 0, '首页', '/dashboard', 'dashboard/index', 'HomeFilled', '', 0),
-(@menu_iot, @tenant_id, '0', 0, 'IoT平台', '/iot', NULL, 'Monitor', '', 1),
-(@menu_iot_product, @tenant_id, @menu_iot, 1, '产品管理', '/iot/product', 'iot/product/index', 'Box', 'iot:product:list', 1),
-(@menu_iot_device, @tenant_id, @menu_iot, 1, '设备管理', '/iot/device', 'iot/device/index', 'Cpu', 'iot:device:list', 2),
-(@menu_iot_mqtt, @tenant_id, @menu_iot, 1, 'MQTT配置', '/iot/mqtt', 'iot/mqtt/index', 'Connection', 'iot:mqtt:list', 3),
-(@menu_iot_rule, @tenant_id, @menu_iot, 1, '规则引擎', '/iot/rule', 'iot/rule/index', 'Filter', 'iot:rule:list', 4),
-(@menu_iot_storage, @tenant_id, @menu_iot, 1, '文件存储', '/iot/storage', 'iot/storage/index', 'FolderOpened', 'iot:storage:list', 5),
-(@menu_iot_firmware, @tenant_id, @menu_iot, 1, '固件管理', '/iot/firmware', 'iot/firmware/index', 'Upload', 'iot:firmware:list', 6),
-(@menu_iot_ota, @tenant_id, @menu_iot, 1, 'OTA升级', '/iot/ota', 'iot/ota/index', 'Promotion', 'iot:ota:list', 7),
-(@menu_system, @tenant_id, '0', 0, '系统管理', '/system', NULL, 'Setting', '', 2),
-(@menu_user, @tenant_id, @menu_system, 1, '用户管理', '/system/user', 'system/user/index', 'User', 'system:user:list', 1),
-(@menu_role, @tenant_id, @menu_system, 1, '角色管理', '/system/role', 'system/role/index', 'UserFilled', 'system:role:list', 2),
-(@menu_menu, @tenant_id, @menu_system, 1, '菜单管理', '/system/menu', 'system/menu/index', 'Grid', 'system:menu:list', 3),
-(@menu_tenant, @tenant_id, @menu_system, 1, '租户管理', '/system/tenant', 'system/tenant/index', 'OfficeBuilding', 'system:tenant:list', 4),
-(@menu_audit, @tenant_id, @menu_system, 1, '审计日志', '/system/audit', 'system/audit/index', 'Document', 'system:audit:list', 5);
+INSERT INTO sys_menu (id, scope, parent_id, menu_type, menu_name, path, component, icon, perms, order_num) VALUES
+-- Platform menus (scope=PLATFORM)
+(@menu_platform, 'PLATFORM', '0', 0, '平台管理', '/platform', NULL, 'Monitor', '', 0),
+(@menu_platform_tenant, 'PLATFORM', @menu_platform, 1, '租户管理', '/platform/tenant', 'system/tenant/index', 'OfficeBuilding', 'platform:tenant:list', 1),
+(@menu_platform_package, 'PLATFORM', @menu_platform, 1, '租户套餐管理', '/platform/package', 'platform/package/index', 'PriceTag', 'platform:package:list', 2),
+-- Dashboard (scope=TENANT, shared)
+(@menu_dashboard, 'TENANT', '0', 0, '首页', '/dashboard', 'dashboard/index', 'HomeFilled', '', 0),
+-- IoT menus (scope=TENANT)
+(@menu_iot, 'TENANT', '0', 0, 'IoT平台', '/iot', NULL, 'Monitor', '', 1),
+(@menu_iot_product, 'TENANT', @menu_iot, 1, '产品管理', '/iot/product', 'iot/product/index', 'Box', 'iot:product:list', 1),
+(@menu_iot_device, 'TENANT', @menu_iot, 1, '设备管理', '/iot/device', 'iot/device/index', 'Cpu', 'iot:device:list', 2),
+(@menu_iot_mqtt, 'TENANT', @menu_iot, 1, 'MQTT配置', '/iot/mqtt', 'iot/mqtt/index', 'Connection', 'iot:mqtt:list', 3),
+(@menu_iot_rule, 'TENANT', @menu_iot, 1, '规则引擎', '/iot/rule', 'iot/rule/index', 'Filter', 'iot:rule:list', 4),
+(@menu_iot_storage, 'TENANT', @menu_iot, 1, '文件存储', '/iot/storage', 'iot/storage/index', 'FolderOpened', 'iot:storage:list', 5),
+(@menu_iot_firmware, 'TENANT', @menu_iot, 1, '固件管理', '/iot/firmware', 'iot/firmware/index', 'Upload', 'iot:firmware:list', 6),
+(@menu_iot_ota, 'TENANT', @menu_iot, 1, 'OTA升级', '/iot/ota', 'iot/ota/index', 'Promotion', 'iot:ota:list', 7),
+-- System menus (scope=TENANT)
+(@menu_system, 'TENANT', '0', 0, '系统管理', '/system', NULL, 'Setting', '', 2),
+(@menu_user, 'TENANT', @menu_system, 1, '用户管理', '/system/user', 'system/user/index', 'User', 'system:user:list', 1),
+(@menu_role, 'TENANT', @menu_system, 1, '角色管理', '/system/role', 'system/role/index', 'UserFilled', 'system:role:list', 2),
+(@menu_menu, 'TENANT', @menu_system, 1, '菜单管理', '/system/menu', 'system/menu/index', 'Grid', 'system:menu:list', 3),
+(@menu_tenant, 'TENANT', @menu_system, 1, '租户管理', '/system/tenant', 'system/tenant/index', 'OfficeBuilding', 'system:tenant:list', 4),
+(@menu_audit, 'TENANT', @menu_system, 1, '审计日志', '/system/audit', 'system/audit/index', 'Document', 'system:audit:list', 5);
 
 INSERT INTO sys_user_role (id, user_id, role_id)
 VALUES ('20', @admin_user_id, @admin_role_id);
 
 INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES
+-- Platform admin sees platform menus
+('50', @admin_role_id, @menu_platform),
+('51', @admin_role_id, @menu_platform_tenant),
+('46', @admin_role_id, @menu_platform_package),
+-- Platform admin also sees all tenant menus (for management)
 ('30', @admin_role_id, @menu_dashboard),
 ('31', @admin_role_id, @menu_iot),
 ('32', @admin_role_id, @menu_iot_product),
@@ -327,7 +364,7 @@ INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES
 -- IoT Product Table
 CREATE TABLE IF NOT EXISTS iot_product (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     parent_id VARCHAR(32) DEFAULT NULL,
     product_key VARCHAR(20) NOT NULL,
     name VARCHAR(100) NOT NULL,
@@ -349,7 +386,7 @@ CREATE TABLE IF NOT EXISTS iot_product (
 -- IoT Device Table
 CREATE TABLE IF NOT EXISTS iot_device (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     product_id VARCHAR(32) NOT NULL,
     product_key VARCHAR(20) NOT NULL,
     parent_device_id VARCHAR(32) DEFAULT NULL,
@@ -374,7 +411,7 @@ CREATE TABLE IF NOT EXISTS iot_device (
 -- IoT Device Shadow Table
 CREATE TABLE IF NOT EXISTS iot_device_shadow (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     device_id VARCHAR(32) NOT NULL,
     property_identifier VARCHAR(64) NOT NULL,
     desired_value JSON DEFAULT NULL,
@@ -394,7 +431,7 @@ CREATE TABLE IF NOT EXISTS iot_device_shadow (
 -- IoT Device Command Table
 CREATE TABLE IF NOT EXISTS iot_device_command (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     device_id VARCHAR(32) NOT NULL,
     command_type VARCHAR(20) NOT NULL,
     identifier VARCHAR(64) NOT NULL,
@@ -411,7 +448,7 @@ CREATE TABLE IF NOT EXISTS iot_device_command (
 -- IoT Rule Engine Table
 CREATE TABLE IF NOT EXISTS iot_rule (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     name VARCHAR(100) NOT NULL,
     description VARCHAR(500) DEFAULT NULL,
     rule_type TINYINT DEFAULT 0,
@@ -451,7 +488,7 @@ CREATE TABLE IF NOT EXISTS iot_rule_exec_log (
 -- IoT MQTT Config Table
 CREATE TABLE IF NOT EXISTS iot_mqtt_config (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     name VARCHAR(50) NOT NULL,
     description VARCHAR(200) DEFAULT NULL,
     broker VARCHAR(200) NOT NULL,
@@ -475,7 +512,7 @@ CREATE TABLE IF NOT EXISTS iot_mqtt_config (
 -- IoT File Storage Table
 CREATE TABLE IF NOT EXISTS iot_file_storage (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     name VARCHAR(100) NOT NULL,
     storage_type TINYINT NOT NULL COMMENT '0本地 1MinIO',
     local_path VARCHAR(500) DEFAULT NULL,
@@ -496,7 +533,7 @@ CREATE TABLE IF NOT EXISTS iot_file_storage (
 -- IoT Firmware Table
 CREATE TABLE IF NOT EXISTS iot_firmware (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     product_id VARCHAR(32) NOT NULL,
     product_key VARCHAR(20) NOT NULL,
     firmware_name VARCHAR(200) NOT NULL,
@@ -520,7 +557,7 @@ CREATE TABLE IF NOT EXISTS iot_firmware (
 -- IoT OTA Task Table
 CREATE TABLE IF NOT EXISTS iot_ota_task (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     task_name VARCHAR(100) NOT NULL,
     firmware_id VARCHAR(32) NOT NULL,
     product_id VARCHAR(32) NOT NULL,
@@ -545,7 +582,7 @@ CREATE TABLE IF NOT EXISTS iot_ota_task (
 -- IoT OTA Task Device Table
 CREATE TABLE IF NOT EXISTS iot_ota_task_device (
     id VARCHAR(32) NOT NULL,
-    tenant_id VARCHAR(32) NOT NULL DEFAULT '1',
+    tenant_id VARCHAR(32) NOT NULL DEFAULT '',
     task_id VARCHAR(32) NOT NULL,
     device_id VARCHAR(32) NOT NULL,
     device_name VARCHAR(100) NOT NULL,

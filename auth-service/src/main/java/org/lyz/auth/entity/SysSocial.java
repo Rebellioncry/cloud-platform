@@ -36,4 +36,10 @@ public class SysSocial {
     private String avatar;
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
+    @Schema(description = "更新时间")
+    private LocalDateTime updateTime;
+    @Schema(description = "删除标记")
+    private Integer deleted;
+    @Schema(description = "乐观锁版本号")
+    private Integer version;
 }
