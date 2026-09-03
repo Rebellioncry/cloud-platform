@@ -63,8 +63,7 @@ public class PlatformServiceImpl implements PlatformService {
             map.put("createTime", t.getCreateTime());
 
             long userCount = userDao.count(new LambdaQueryWrapper<SysUser>()
-                    .eq(SysUser::getTenantId, t.getId())
-                    .eq(SysUser::getTenantScope, TenantConstants.SCOPE_TENANT));
+                    .eq(SysUser::getTenantId, t.getId()));
             map.put("userCount", userCount);
 
             return map;
@@ -157,7 +156,6 @@ public class PlatformServiceImpl implements PlatformService {
 
         SysUser admin = userDao.getOne(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getTenantId, tenantId)
-                .eq(SysUser::getTenantScope, TenantConstants.SCOPE_TENANT)
                 .eq(SysUser::getStatus, 1)
                 .last("LIMIT 1"));
         if (admin == null) {
@@ -170,7 +168,6 @@ public class PlatformServiceImpl implements PlatformService {
         StpUtil.getSession().set("username", admin.getUsername());
         StpUtil.getSession().set("nickname", admin.getNickname());
         StpUtil.getSession().set("tenantId", admin.getTenantId());
-        StpUtil.getSession().set("tenantScope", admin.getTenantScope());
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("impersonateToken", impersonateToken);
@@ -178,7 +175,6 @@ public class PlatformServiceImpl implements PlatformService {
         result.put("username", admin.getUsername());
         result.put("nickname", admin.getNickname());
         result.put("tenantId", admin.getTenantId());
-        result.put("tenantScope", admin.getTenantScope());
         result.put("tenantName", tenant.getTenantName());
 
         log.info("平台管理员模拟登录: 目标租户={}, 目标用户={}", tenant.getTenantCode(), admin.getUsername());
@@ -191,16 +187,9 @@ public class PlatformServiceImpl implements PlatformService {
         log.info("平台管理员退出模拟登录");
     }
 
-    /**
-     * 为租户自动创建管理员角色（ADMIN, scope=TENANT），并从套餐中分配菜单。
-     * <p>
-     * RuoYi-Plus 风格：创建租户时自动生成角色，菜单权限由套餐（package）控制。
-     */
     private String createTenantAdminRole(String tenantId, String packageId) {
         SysRole adminRole = new SysRole();
         adminRole.setTenantId(tenantId);
-        adminRole.setScope(TenantConstants.SCOPE_TENANT);
-        adminRole.setIsSystem(1);
         adminRole.setRoleCode(TenantConstants.TENANT_ADMIN_ROLE_KEY);
         adminRole.setRoleName(TenantConstants.TENANT_ADMIN_ROLE_NAME);
         adminRole.setRoleSort(1);
@@ -232,9 +221,6 @@ public class PlatformServiceImpl implements PlatformService {
         return adminRole.getId();
     }
 
-    /**
-     * 为租户创建管理员用户，并关联角色。
-     */
     private void createTenantAdminUser(String tenantId, UserDTO adminDto, String roleId) {
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysUser::getUsername, adminDto.getUsername())
@@ -245,7 +231,6 @@ public class PlatformServiceImpl implements PlatformService {
 
         SysUser user = new SysUser();
         user.setTenantId(tenantId);
-        user.setTenantScope(TenantConstants.SCOPE_TENANT);
         user.setUsername(adminDto.getUsername());
         user.setPassword(adminDto.getPassword() != null ? BCrypt.hashpw(adminDto.getPassword()) : BCrypt.hashpw("123456"));
         user.setNickname(adminDto.getNickname() != null ? adminDto.getNickname() : adminDto.getUsername());

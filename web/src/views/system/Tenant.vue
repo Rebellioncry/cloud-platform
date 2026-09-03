@@ -133,7 +133,7 @@ const handleSubmit = async () => {
   if (!valid) return
   try {
     if (isEdit.value) {
-      await updateTenant(form)
+      await updateTenant(form.id, form)
       ElMessage.success('更新成功')
     } else {
       await addTenant(form)

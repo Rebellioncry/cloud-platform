@@ -23,7 +23,7 @@ public class TenantController {
     private final TenantService tenantService;
 
     @Operation(summary = "租户列表", description = "分页获取租户列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<SysTenant>> list(
             @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
             @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size) {
@@ -46,9 +46,11 @@ public class TenantController {
     }
 
     @Operation(summary = "更新租户", description = "修改租户信息")
-    @PutMapping
+    @PutMapping("/{id}")
     public Result<Void> update(
+            @Parameter(description = "租户ID") @PathVariable(value = "id") String id,
             @Parameter(description = "租户信息") @Valid @RequestBody TenantDTO dto) {
+        dto.setId(id);
         tenantService.update(dto);
         return Result.success();
     }

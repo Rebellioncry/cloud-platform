@@ -21,7 +21,7 @@ public class RuleController {
     private final RuleEngineService ruleEngineService;
 
     @Operation(summary = "规则列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<IotRule>> list(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,

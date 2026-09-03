@@ -15,8 +15,6 @@ public class TenantContextFilter extends OncePerRequestFilter {
     private static final String HEADER_TENANT_ID = "X-Tenant-Id";
     private static final String HEADER_USER_ID = "X-User-Id";
     private static final String HEADER_USERNAME = "X-Username";
-    private static final String HEADER_TENANT_SCOPE = "X-Tenant-Scope";
-
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -36,11 +34,6 @@ public class TenantContextFilter extends OncePerRequestFilter {
             String username = request.getHeader(HEADER_USERNAME);
             if (username != null && !username.isEmpty()) {
                 TenantContext.setUsername(username);
-            }
-
-            String tenantScope = request.getHeader(HEADER_TENANT_SCOPE);
-            if (tenantScope != null && !tenantScope.isEmpty()) {
-                TenantContext.setTenantScope(tenantScope);
             }
 
             filterChain.doFilter(request, response);

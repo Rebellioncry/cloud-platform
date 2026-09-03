@@ -23,7 +23,7 @@ public class UserController {
     private final UserService userService;
 
     @Operation(summary = "用户列表", description = "分页获取用户列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<UserDTO>> list(
             @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
             @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size) {
@@ -46,9 +46,11 @@ public class UserController {
     }
 
     @Operation(summary = "更新用户", description = "修改用户信息")
-    @PutMapping
+    @PutMapping("/{id}")
     public Result<Void> update(
+            @Parameter(description = "用户ID") @PathVariable(value = "id") String id,
             @Parameter(description = "用户信息") @Valid @RequestBody UserDTO dto) {
+        dto.setId(id);
         userService.update(dto);
         return Result.success();
     }

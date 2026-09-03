@@ -23,14 +23,13 @@ import org.lyz.auth.service.LoginService;
 import org.lyz.auth.service.VerificationService;
 import org.lyz.common.core.entity.SysUser;
 import org.lyz.common.core.constant.SecurityConstants;
+import org.lyz.common.core.context.LoginHelper;
 import org.lyz.common.core.context.TenantContext;
-import org.lyz.common.core.context.UserContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -47,7 +46,6 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public LoginResponse login(LoginRequest request) {
         if (request.getCaptchaToken() != null && !request.getCaptchaToken().isEmpty()) {
-            // 验证码已在 /captcha/check 中通过 tianai-captcha matching() 校验
         }
 
         String tenantId = request.getTenantId();
@@ -59,7 +57,7 @@ public class LoginServiceImpl implements LoginService {
         if (tenantId != null && !tenantId.isEmpty()) {
             wrapper.eq(SysUser::getTenantId, tenantId);
         }
-        
+
         SysUser user = sysUserDao.getOne(wrapper);
 
         if (user == null && (tenantId == null || tenantId.isEmpty())) {
@@ -79,9 +77,6 @@ public class LoginServiceImpl implements LoginService {
         }
         TenantContext.setTenantId(resolvedTenantId);
 
-        String tenantScope = user.getTenantScope() != null ? user.getTenantScope() : "TENANT";
-        TenantContext.setTenantScope(tenantScope);
-
         if (!bcryptCheck(request.getPassword(), user.getPassword())) {
             throw new BusinessException("密码错误");
         }
@@ -92,7 +87,7 @@ public class LoginServiceImpl implements LoginService {
 
         writeSessionData(user.getId());
 
-        log.info("用户登录成功: {} (scope={})", user.getUsername(), tenantScope);
+        log.info("用户登录成功: {}", user.getUsername());
 
         return LoginResponse.builder()
                 .token(token)
@@ -101,7 +96,6 @@ public class LoginServiceImpl implements LoginService {
                 .nickname(user.getNickname())
                 .avatar(user.getAvatar())
                 .tenantId(user.getTenantId())
-                .tenantScope(tenantScope)
                 .expireTime(expireTime)
                 .build();
     }
@@ -125,7 +119,6 @@ public class LoginServiceImpl implements LoginService {
             tenantId = "1";
         }
         TenantContext.setTenantId(tenantId);
-        TenantContext.setTenantScope("TENANT");
 
         String target = verificationService.resolveTarget(request.getType(), request.getMobile(), request.getEmail());
         verificationService.verifyCode(request.getType(), target, request.getCode());
@@ -155,7 +148,6 @@ public class LoginServiceImpl implements LoginService {
                 .nickname(user.getNickname())
                 .avatar(user.getAvatar())
                 .tenantId(user.getTenantId())
-                .tenantScope("TENANT")
                 .expireTime(expireTime)
                 .build();
     }
@@ -169,7 +161,8 @@ public class LoginServiceImpl implements LoginService {
         }
 
         List<String> roleCodes = sysUserDao.selectRoleCodesByUserId(userId);
-        String tenantScope = user.getTenantScope() != null ? user.getTenantScope() : "TENANT";
+
+        boolean superAdmin = LoginHelper.isSuperAdmin(userId);
 
         return UserInfo.builder()
                 .userId(user.getId())
@@ -179,25 +172,23 @@ public class LoginServiceImpl implements LoginService {
                 .mobile(user.getMobile())
                 .avatar(user.getAvatar())
                 .tenantId(user.getTenantId())
-                .tenantScope(tenantScope)
+                .superAdmin(superAdmin)
                 .roles(roleCodes)
-                .menus(getUserMenus(tenantScope))
+                .menus(getUserMenus())
                 .build();
     }
 
-    private List<MenuTree> getUserMenus(String tenantScope) {
+    private List<MenuTree> getUserMenus() {
         String userId = StpUtil.getLoginIdAsString();
 
-        if ("PLATFORM".equals(tenantScope)) {
+        if (LoginHelper.isSuperAdmin()) {
             List<SysMenu> menus = sysMenuDao.list(
                     new LambdaQueryWrapper<SysMenu>()
                             .eq(SysMenu::getStatus, 1)
-                            .eq(SysMenu::getScope, "PLATFORM")
                             .orderByAsc(SysMenu::getOrderNum));
             return buildMenuTree(menus, "0");
         }
 
-        // 获取用户角色关联的菜单ID
         List<String> roleMenuIds = sysMenuDao.list(
                 new LambdaQueryWrapper<SysMenu>()
                         .select(SysMenu::getId)
@@ -206,11 +197,9 @@ public class LoginServiceImpl implements LoginService {
                                         "SELECT role_id FROM sys_user_role WHERE user_id = '" + userId + "')")
         ).stream().map(SysMenu::getId).collect(Collectors.toList());
 
-        // 获取租户套餐允许的菜单ID（intersection with package）
-        String tenantId = UserContext.getTenantId();
+        String tenantId = getTenantIdFromSession();
         Set<String> packageMenuIds = resolvePackageMenuIds(tenantId);
 
-        // 取交集：角色菜单 ∩ 套餐菜单
         Set<String> finalMenuIds;
         if (packageMenuIds != null) {
             finalMenuIds = roleMenuIds.stream()
@@ -227,18 +216,21 @@ public class LoginServiceImpl implements LoginService {
         List<SysMenu> menus = sysMenuDao.list(
                 new LambdaQueryWrapper<SysMenu>()
                         .eq(SysMenu::getStatus, 1)
-                        .eq(SysMenu::getScope, "TENANT")
                         .in(SysMenu::getId, finalMenuIds)
-                        .orderByAsc(SysMenu::getOrderNum)
-        );
+                        .orderByAsc(SysMenu::getOrderNum));
 
         return buildMenuTree(menus, "0");
     }
 
-    /**
-     * 解析租户套餐允许的菜单ID集合。
-     * 如果租户没有绑定套餐，返回 null（不限制）。
-     */
+    private String getTenantIdFromSession() {
+        try {
+            Object tid = StpUtil.getSession().get("tenantId");
+            return tid != null ? tid.toString() : "";
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     private Set<String> resolvePackageMenuIds(String tenantId) {
         if (tenantId == null || tenantId.isEmpty()) {
             return null;
@@ -289,12 +281,9 @@ public class LoginServiceImpl implements LoginService {
             StpUtil.getSession().set("userId", userId);
             StpUtil.getSession().set("username", user.getUsername());
             StpUtil.getSession().set("tenantId", user.getTenantId());
-            String scope = user.getTenantScope() != null ? user.getTenantScope() : "TENANT";
-            StpUtil.getSession().set("tenantScope", scope);
             SysUser safeUser = new SysUser();
             safeUser.setId(user.getId());
             safeUser.setTenantId(user.getTenantId());
-            safeUser.setTenantScope(user.getTenantScope());
             safeUser.setUsername(user.getUsername());
             safeUser.setNickname(user.getNickname());
             safeUser.setEmail(user.getEmail());
@@ -320,7 +309,6 @@ public class LoginServiceImpl implements LoginService {
     private SysUser createAutoUser(String type, String target, String tenantId) {
         SysUser user = new SysUser();
         user.setTenantId(tenantId);
-        user.setTenantScope("TENANT");
         user.setStatus(1);
         if ("sms".equalsIgnoreCase(type)) {
             user.setUsername(target);

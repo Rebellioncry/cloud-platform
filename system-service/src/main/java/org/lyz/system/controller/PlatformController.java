@@ -23,7 +23,7 @@ public class PlatformController {
     private final PlatformService platformService;
 
     @Operation(summary = "租户列表", description = "分页获取所有租户（含用户数统计）")
-    @GetMapping("/tenant/list")
+    @GetMapping("/tenant")
     public Result<PageResult<Map<String, Object>>> listTenants(
             @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
             @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size) {

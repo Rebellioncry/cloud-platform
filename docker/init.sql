@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS sys_tenant_package (
 CREATE TABLE IF NOT EXISTS sys_user (
     id VARCHAR(32) NOT NULL,
     tenant_id VARCHAR(32) NOT NULL DEFAULT '',
-    tenant_scope VARCHAR(20) NOT NULL DEFAULT 'TENANT' COMMENT 'PLATFORM=平台用户, TENANT=租户用户',
+
     username VARCHAR(50) NOT NULL,
     password VARCHAR(100) DEFAULT NULL,
     nickname VARCHAR(50) DEFAULT NULL,
@@ -211,8 +211,8 @@ CREATE TABLE IF NOT EXISTS sys_user (
 CREATE TABLE IF NOT EXISTS sys_role (
     id VARCHAR(32) NOT NULL,
     tenant_id VARCHAR(32) NOT NULL DEFAULT '',
-    scope VARCHAR(20) NOT NULL DEFAULT 'TENANT' COMMENT 'PLATFORM=平台角色, TENANT=租户角色',
-    is_system TINYINT(1) NOT NULL DEFAULT 0 COMMENT '系统内置角色,不可删除',
+    menu_check_strictly TINYINT(1) DEFAULT 0 COMMENT '菜单树选择项是否关联显示',
+    dept_check_strictly TINYINT(1) DEFAULT 0 COMMENT '部门树选择项是否关联显示',
     role_code VARCHAR(50) NOT NULL,
     role_name VARCHAR(50) NOT NULL,
     role_sort INT DEFAULT 0,
@@ -229,9 +229,12 @@ CREATE TABLE IF NOT EXISTS sys_role (
 
 CREATE TABLE IF NOT EXISTS sys_menu (
     id VARCHAR(32) NOT NULL,
-    scope VARCHAR(20) NOT NULL DEFAULT 'TENANT' COMMENT 'PLATFORM=平台菜单, TENANT=租户菜单',
     parent_id VARCHAR(32) DEFAULT '0',
-    menu_type TINYINT NOT NULL DEFAULT 1,
+    menu_type CHAR(1) NOT NULL DEFAULT 'C',
+    is_frame CHAR(1) DEFAULT 'N' COMMENT '是否为外链 Y是 N否',
+    is_cache CHAR(1) DEFAULT 'Y' COMMENT '是否缓存 Y缓存 N不缓存',
+    active_menu VARCHAR(200) DEFAULT NULL COMMENT '激活菜单路径',
+    query_param VARCHAR(255) DEFAULT NULL COMMENT '路由参数',
     menu_name VARCHAR(50) NOT NULL,
     path VARCHAR(200) DEFAULT NULL,
     component VARCHAR(255) DEFAULT NULL,
@@ -286,7 +289,7 @@ SET @admin_role_id = '3';
 SET @menu_platform = '01';
 SET @menu_platform_tenant = '02';
 SET @menu_platform_package = '03';
-SET @menu_dashboard = '15';
+SET @menu_dashboard = '00';
 SET @menu_iot = '20';
 SET @menu_iot_product = '21';
 SET @menu_iot_device = '22';
@@ -295,46 +298,48 @@ SET @menu_iot_rule = '24';
 SET @menu_iot_storage = '25';
 SET @menu_iot_firmware = '26';
 SET @menu_iot_ota = '27';
-SET @menu_system = '10';
-SET @menu_user = '11';
-SET @menu_role = '12';
-SET @menu_menu = '13';
+SET @menu_iot_upgrade = '28';
+SET @menu_system = '100';
+SET @menu_user = '110';
+SET @menu_role = '120';
+SET @menu_menu = '130';
 SET @menu_tenant = '14';
-SET @menu_audit = '16';
+SET @menu_audit = '160';
 SET @pkg_default = 'P1';
 
 INSERT INTO sys_tenant_package (id, package_name, menu_ids, status, remark)
-VALUES (@pkg_default, 'IoT标准套餐', '15,20,21,22,23,24,25,26,27,10,11,12,13,14,16', 1, '包含IoT平台全部功能及系统管理');
+VALUES (@pkg_default, 'IoT标准套餐', '00,20,21,22,23,24,28,25,26,27,100,110,120,130,14,160', 1, '包含IoT平台全部功能及系统管理');
 
-INSERT INTO sys_user (id, tenant_id, tenant_scope, username, password, nickname, email, mobile, status)
-VALUES (@admin_user_id, '', 'PLATFORM', 'admin', '123456', 'Admin', 'admin@example.com', '13800138000', 1);
+INSERT INTO sys_user (id, tenant_id, username, password, nickname, email, mobile, status)
+VALUES (@admin_user_id, '', 'admin', '123456', 'Admin', 'admin@example.com', '13800138000', 1);
 
-INSERT INTO sys_role (id, tenant_id, scope, is_system, role_code, role_name, role_sort, status, data_scope)
-VALUES (@admin_role_id, '', 'PLATFORM', 1, 'SUPER_ADMIN', '超级管理员', 1, 1, 1);
+INSERT INTO sys_role (id, tenant_id, role_code, role_name, role_sort, status, data_scope)
+VALUES (@admin_role_id, '', 'SUPER_ADMIN', '超级管理员', 1, 1, 1);
 
-INSERT INTO sys_menu (id, scope, parent_id, menu_type, menu_name, path, component, icon, perms, order_num) VALUES
--- Platform menus (scope=PLATFORM)
-(@menu_platform, 'PLATFORM', '0', 0, '平台管理', '/platform', NULL, 'Monitor', '', 0),
-(@menu_platform_tenant, 'PLATFORM', @menu_platform, 1, '租户管理', '/platform/tenant', 'system/tenant/index', 'OfficeBuilding', 'platform:tenant:list', 1),
-(@menu_platform_package, 'PLATFORM', @menu_platform, 1, '租户套餐管理', '/platform/package', 'platform/package/index', 'PriceTag', 'platform:package:list', 2),
--- Dashboard (scope=TENANT, shared)
-(@menu_dashboard, 'TENANT', '0', 0, '首页', '/dashboard', 'dashboard/index', 'HomeFilled', '', 0),
--- IoT menus (scope=TENANT)
-(@menu_iot, 'TENANT', '0', 0, 'IoT平台', '/iot', NULL, 'Monitor', '', 1),
-(@menu_iot_product, 'TENANT', @menu_iot, 1, '产品管理', '/iot/product', 'iot/product/index', 'Box', 'iot:product:list', 1),
-(@menu_iot_device, 'TENANT', @menu_iot, 1, '设备管理', '/iot/device', 'iot/device/index', 'Cpu', 'iot:device:list', 2),
-(@menu_iot_mqtt, 'TENANT', @menu_iot, 1, 'MQTT配置', '/iot/mqtt', 'iot/mqtt/index', 'Connection', 'iot:mqtt:list', 3),
-(@menu_iot_rule, 'TENANT', @menu_iot, 1, '规则引擎', '/iot/rule', 'iot/rule/index', 'Filter', 'iot:rule:list', 4),
-(@menu_iot_storage, 'TENANT', @menu_iot, 1, '文件存储', '/iot/storage', 'iot/storage/index', 'FolderOpened', 'iot:storage:list', 5),
-(@menu_iot_firmware, 'TENANT', @menu_iot, 1, '固件管理', '/iot/firmware', 'iot/firmware/index', 'Upload', 'iot:firmware:list', 6),
-(@menu_iot_ota, 'TENANT', @menu_iot, 1, 'OTA升级', '/iot/ota', 'iot/ota/index', 'Promotion', 'iot:ota:list', 7),
--- System menus (scope=TENANT)
-(@menu_system, 'TENANT', '0', 0, '系统管理', '/system', NULL, 'Setting', '', 2),
-(@menu_user, 'TENANT', @menu_system, 1, '用户管理', '/system/user', 'system/user/index', 'User', 'system:user:list', 1),
-(@menu_role, 'TENANT', @menu_system, 1, '角色管理', '/system/role', 'system/role/index', 'UserFilled', 'system:role:list', 2),
-(@menu_menu, 'TENANT', @menu_system, 1, '菜单管理', '/system/menu', 'system/menu/index', 'Grid', 'system:menu:list', 3),
-(@menu_tenant, 'TENANT', @menu_system, 1, '租户管理', '/system/tenant', 'system/tenant/index', 'OfficeBuilding', 'system:tenant:list', 4),
-(@menu_audit, 'TENANT', @menu_system, 1, '审计日志', '/system/audit', 'system/audit/index', 'Document', 'system:audit:list', 5);
+INSERT INTO sys_menu (id, parent_id, menu_type, menu_name, path, component, icon, perms, order_num) VALUES
+-- Platform menus
+(@menu_platform, '0', 'M', '平台管理', '/platform', NULL, 'Monitor', '', 0),
+(@menu_platform_tenant, @menu_platform, 'C', '租户管理', '/platform/tenant', 'system/tenant/index', 'OfficeBuilding', 'platform:tenant:list', 1),
+(@menu_platform_package, @menu_platform, 'C', '租户套餐管理', '/platform/package', 'platform/package/index', 'PriceTag', 'platform:package:list', 2),
+-- Dashboard
+(@menu_dashboard, '0', 'M', '首页', '/dashboard', 'dashboard/index', 'HomeFilled', '', 0),
+-- IoT menus
+(@menu_iot, '0', 'M', 'IoT平台', '/iot', NULL, 'Monitor', '', 1),
+(@menu_iot_product, @menu_iot, 'C', '产品管理', '/iot/product', 'iot/product/index', 'Box', 'iot:product:list', 1),
+(@menu_iot_device, @menu_iot, 'C', '设备管理', '/iot/device', 'iot/device/index', 'Cpu', 'iot:device:list', 2),
+(@menu_iot_mqtt, @menu_iot, 'C', 'MQTT配置', '/iot/mqtt', 'iot/mqtt/index', 'Connection', 'iot:mqtt:list', 3),
+(@menu_iot_rule, @menu_iot, 'C', '规则引擎', '/iot/rule', 'iot/rule/index', 'Filter', 'iot:rule:list', 4),
+(@menu_iot_upgrade, @menu_iot, 'M', '设备升级', NULL, NULL, 'Promotion', '', 5),
+(@menu_iot_storage, @menu_iot_upgrade, 'C', '文件存储', '/iot/storage', 'iot/storage/index', 'FolderOpened', 'iot:storage:list', 1),
+(@menu_iot_firmware, @menu_iot_upgrade, 'C', '固件管理', '/iot/firmware', 'iot/firmware/index', 'Upload', 'iot:firmware:list', 2),
+(@menu_iot_ota, @menu_iot_upgrade, 'C', 'OTA升级', '/iot/ota', 'iot/ota/index', 'Promotion', 'iot:ota:list', 3),
+-- System menus
+(@menu_system, '0', 'M', '系统管理', '/system', NULL, 'Setting', '', 2),
+(@menu_user, @menu_system, 'C', '用户管理', '/system/user', 'system/user/index', 'User', 'system:user:list', 1),
+(@menu_role, @menu_system, 'C', '角色管理', '/system/role', 'system/role/index', 'UserFilled', 'system:role:list', 2),
+(@menu_menu, @menu_system, 'C', '菜单管理', '/system/menu', 'system/menu/index', 'Grid', 'system:menu:list', 3),
+(@menu_tenant, @menu_system, 'C', '租户管理', '/system/tenant', 'system/tenant/index', 'OfficeBuilding', 'system:tenant:list', 4),
+(@menu_audit, @menu_system, 'C', '审计日志', '/system/audit', 'system/audit/index', 'Document', 'system:audit:list', 5);
 
 INSERT INTO sys_user_role (id, user_id, role_id)
 VALUES ('20', @admin_user_id, @admin_role_id);
@@ -344,16 +349,18 @@ INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES
 ('50', @admin_role_id, @menu_platform),
 ('51', @admin_role_id, @menu_platform_tenant),
 ('46', @admin_role_id, @menu_platform_package),
--- Platform admin also sees all tenant menus (for management)
+-- Platform admin also sees all IoT menus (for management)
 ('30', @admin_role_id, @menu_dashboard),
 ('31', @admin_role_id, @menu_iot),
 ('32', @admin_role_id, @menu_iot_product),
 ('33', @admin_role_id, @menu_iot_device),
 ('34', @admin_role_id, @menu_iot_mqtt),
 ('41', @admin_role_id, @menu_iot_rule),
+('45', @admin_role_id, @menu_iot_upgrade),
 ('42', @admin_role_id, @menu_iot_storage),
 ('43', @admin_role_id, @menu_iot_firmware),
 ('44', @admin_role_id, @menu_iot_ota),
+-- Platform admin also sees system management menus
 ('35', @admin_role_id, @menu_system),
 ('36', @admin_role_id, @menu_user),
 ('37', @admin_role_id, @menu_role),

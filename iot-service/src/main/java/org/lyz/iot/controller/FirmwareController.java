@@ -20,7 +20,7 @@ public class FirmwareController {
     private final FirmwareService firmwareService;
 
     @Operation(summary = "固件列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<IotFirmware>> list(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
@@ -36,7 +36,7 @@ public class FirmwareController {
     }
 
     @Operation(summary = "上传固件")
-    @PostMapping("/upload")
+    @PostMapping
     public Result<IotFirmware> upload(
             @RequestPart(value = "file") MultipartFile file,
             @RequestParam(value = "productId") String productId,

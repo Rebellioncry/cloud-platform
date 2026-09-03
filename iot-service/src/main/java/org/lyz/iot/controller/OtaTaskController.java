@@ -22,7 +22,7 @@ public class OtaTaskController {
     private final OtaTaskService otaTaskService;
 
     @Operation(summary = "任务列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<IotOtaTask>> list(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,

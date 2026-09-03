@@ -21,7 +21,7 @@ public class TenantPackageController {
     private final TenantPackageService packageService;
 
     @Operation(summary = "套餐列表", description = "分页获取所有套餐")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<SysTenantPackage>> list(
             @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
             @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size) {
@@ -49,8 +49,11 @@ public class TenantPackageController {
     }
 
     @Operation(summary = "更新套餐", description = "修改套餐信息")
-    @PutMapping
-    public Result<Void> update(@RequestBody SysTenantPackage pkg) {
+    @PutMapping("/{id}")
+    public Result<Void> update(
+            @Parameter(description = "套餐ID") @PathVariable(value = "id") String id,
+            @RequestBody SysTenantPackage pkg) {
+        pkg.setId(id);
         packageService.update(pkg);
         return Result.success();
     }

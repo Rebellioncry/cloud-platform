@@ -8,8 +8,8 @@
       <el-table-column prop="menuName" label="菜单名称" width="200" />
       <el-table-column prop="menuType" label="类型" width="100">
         <template #default="{ row }">
-          <el-tag v-if="row.menuType === 0">目录</el-tag>
-          <el-tag v-else-if="row.menuType === 1" type="success">菜单</el-tag>
+          <el-tag v-if="row.menuType === 'M'">目录</el-tag>
+          <el-tag v-else-if="row.menuType === 'C'" type="success">菜单</el-tag>
           <el-tag v-else type="warning">按钮</el-tag>
         </template>
       </el-table-column>
@@ -17,13 +17,6 @@
       <el-table-column prop="component" label="组件路径" />
       <el-table-column prop="perms" label="权限标识" />
       <el-table-column prop="icon" label="图标" width="100" />
-      <el-table-column prop="scope" label="作用域" width="80" v-if="isPlatformAdmin">
-        <template #default="{ row }">
-          <el-tag :type="row.scope === 'PLATFORM' ? 'danger' : 'success'" size="small">
-            {{ row.scope === 'PLATFORM' ? '平台' : '租户' }}
-          </el-tag>
-        </template>
-      </el-table-column>
       <el-table-column prop="orderNum" label="排序" width="80" />
       <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column prop="visible" label="状态" width="80">
@@ -46,9 +39,9 @@
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="菜单类型" prop="menuType">
           <el-radio-group v-model="form.menuType">
-            <el-radio :label="0">目录</el-radio>
-            <el-radio :label="1">菜单</el-radio>
-            <el-radio :label="2">按钮</el-radio>
+            <el-radio label="M">目录</el-radio>
+            <el-radio label="C">菜单</el-radio>
+            <el-radio label="F">按钮</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="上级菜单" prop="parentId">
@@ -63,23 +56,17 @@
         <el-form-item label="菜单名称" prop="menuName">
           <el-input v-model="form.menuName" />
         </el-form-item>
-        <el-form-item label="路由路径" prop="path" v-if="form.menuType !== 2">
+        <el-form-item label="路由路径" prop="path" v-if="form.menuType !== 'F'">
           <el-input v-model="form.path" />
         </el-form-item>
-        <el-form-item label="组件路径" prop="component" v-if="form.menuType === 1">
+        <el-form-item label="组件路径" prop="component" v-if="form.menuType === 'C'">
           <el-input v-model="form.component" placeholder="如: system/user/index" />
         </el-form-item>
-        <el-form-item label="权限标识" prop="perms" v-if="form.menuType === 2">
+        <el-form-item label="权限标识" prop="perms" v-if="form.menuType === 'F'">
           <el-input v-model="form.perms" />
         </el-form-item>
         <el-form-item label="图标" prop="icon">
           <el-input v-model="form.icon" />
-        </el-form-item>
-        <el-form-item label="作用域" prop="scope" v-if="isPlatformAdmin">
-          <el-radio-group v-model="form.scope">
-            <el-radio label="PLATFORM">平台</el-radio>
-            <el-radio label="TENANT">租户</el-radio>
-          </el-radio-group>
         </el-form-item>
         <el-form-item label="排序" prop="orderNum">
           <el-input-number v-model="form.orderNum" :min="0" />
@@ -106,7 +93,7 @@ import { getMenuTree, addMenu, updateMenu, deleteMenu } from '@/api/system'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
-const isPlatformAdmin = computed(() => userStore.userInfo?.tenantScope === 'PLATFORM')
+const isSuperAdmin = computed(() => userStore.isSuperAdmin)
 
 const loading = ref(false)
 const tableData = ref([])
@@ -119,15 +106,14 @@ const dialogTitle = computed(() => isEdit.value ? '编辑菜单' : '新增菜单
 const form = reactive({
   id: null,
   parentId: 0,
-  menuType: 1,
+  menuType: 'C',
   menuName: '',
   path: '',
   component: '',
   perms: '',
   icon: '',
   orderNum: 0,
-  visible: 1,
-  scope: 'TENANT'
+  visible: 1
 })
 
 const rules = {
@@ -138,11 +124,7 @@ const loadData = async () => {
   loading.value = true
   try {
     const res = await getMenuTree()
-    let tree = res.data || []
-    if (!isPlatformAdmin.value) {
-      tree = tree.filter(m => m.scope === 'TENANT')
-    }
-    tableData.value = tree
+    tableData.value = res.data || []
     menuTreeData.value = [{ id: 0, menuName: '顶级菜单', children: tree }]
   } catch (error) {
     console.error('加载数据失败:', error)
@@ -152,7 +134,7 @@ const loadData = async () => {
 }
 
 const handleAdd = (parent) => {
-  Object.assign(form, { id: null, parentId: parent?.id || 0, menuType: 1, menuName: '', path: '', component: '', perms: '', icon: '', orderNum: 0, visible: 1, scope: 'TENANT' })
+  Object.assign(form, { id: null, parentId: parent?.id || 0, menuType: 'C', menuName: '', path: '', component: '', perms: '', icon: '', orderNum: 0, visible: 1 })
   dialogVisible.value = true
 }
 
@@ -177,7 +159,7 @@ const handleSubmit = async () => {
   if (!valid) return
   try {
     if (isEdit.value) {
-      await updateMenu(form)
+      await updateMenu(form.id, form)
       ElMessage.success('更新成功')
     } else {
       await addMenu(form)

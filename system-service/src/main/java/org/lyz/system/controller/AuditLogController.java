@@ -25,7 +25,7 @@ public class AuditLogController {
     private final MongoTemplate mongoTemplate;
 
     @Operation(summary = "审计日志列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<Map<String, Object>> list(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,

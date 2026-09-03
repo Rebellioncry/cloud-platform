@@ -10,9 +10,8 @@ import lombok.Data;
 public class SysMenu {
 
     private String id;
-    private String scope;
     private String parentId;
-    private Integer menuType;
+    private String menuType;
     private String menuName;
     private String path;
     private String component;

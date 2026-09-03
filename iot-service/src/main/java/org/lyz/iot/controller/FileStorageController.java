@@ -19,7 +19,7 @@ public class FileStorageController {
     private final FileStorageService fileStorageService;
 
     @Operation(summary = "存储列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<IotFileStorage>> list(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,

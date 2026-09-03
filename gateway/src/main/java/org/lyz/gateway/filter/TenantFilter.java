@@ -15,7 +15,6 @@ public class TenantFilter implements GlobalFilter, Ordered {
     private static final String TENANT_ID_HEADER = "X-Tenant-Id";
     private static final String USER_ID_HEADER = "X-User-Id";
     private static final String USERNAME_HEADER = "X-Username";
-    private static final String TENANT_SCOPE_HEADER = "X-Tenant-Scope";
     private static final String DEFAULT_TENANT_ID = "";
 
     @Override
@@ -29,7 +28,6 @@ public class TenantFilter implements GlobalFilter, Ordered {
 
         String userId = null;
         String username = null;
-        String tenantScope = null;
 
         try {
             if (StpUtil.isLogin()) {
@@ -38,11 +36,6 @@ public class TenantFilter implements GlobalFilter, Ordered {
                 Object usernameObj = StpUtil.getSession().get("username");
                 if (usernameObj != null) {
                     username = usernameObj.toString();
-                }
-
-                Object tenantScopeObj = StpUtil.getSession().get("tenantScope");
-                if (tenantScopeObj != null) {
-                    tenantScope = tenantScopeObj.toString();
                 }
 
                 Object tenantIdObj = StpUtil.getSession().get("tenantId");
@@ -60,9 +53,6 @@ public class TenantFilter implements GlobalFilter, Ordered {
         }
         if (username != null) {
             builder.header(USERNAME_HEADER, username);
-        }
-        if (tenantScope != null) {
-            builder.header(TENANT_SCOPE_HEADER, tenantScope);
         }
 
         return chain.filter(exchange.mutate().request(builder.build()).build());

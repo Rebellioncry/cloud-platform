@@ -5,7 +5,6 @@ public class TenantContext {
     private static final ThreadLocal<String> TENANT_ID = new ThreadLocal<>();
     private static final ThreadLocal<String> USER_ID = new ThreadLocal<>();
     private static final ThreadLocal<String> USERNAME = new ThreadLocal<>();
-    private static final ThreadLocal<String> TENANT_SCOPE = new ThreadLocal<>();
     private static final ThreadLocal<Boolean> IGNORE_TENANT = new ThreadLocal<>();
 
     public static void setTenantId(String tenantId) {
@@ -32,23 +31,10 @@ public class TenantContext {
         return USERNAME.get();
     }
 
-    public static void setTenantScope(String scope) {
-        TENANT_SCOPE.set(scope);
-    }
-
-    public static String getTenantScope() {
-        return TENANT_SCOPE.get();
-    }
-
-    public static boolean isPlatformScope() {
-        return "PLATFORM".equals(TENANT_SCOPE.get());
-    }
-
     public static void clear() {
         TENANT_ID.remove();
         USER_ID.remove();
         USERNAME.remove();
-        TENANT_SCOPE.remove();
         IGNORE_TENANT.remove();
     }
 

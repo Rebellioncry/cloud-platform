@@ -13,10 +13,6 @@ import org.lyz.common.core.entity.BaseEntity;
 public class SysRole extends BaseEntity {
     @Schema(description = "租户ID")
     private String tenantId;
-    @Schema(description = "角色作用域: PLATFORM=平台角色, TENANT=租户角色")
-    private String scope;
-    @Schema(description = "系统内置: 0=否, 1=是")
-    private Integer isSystem;
     @Schema(description = "角色编码")
     private String roleCode;
     @Schema(description = "角色名称")
@@ -25,8 +21,12 @@ public class SysRole extends BaseEntity {
     private Integer roleSort;
     @Schema(description = "状态")
     private Integer status;
-    @Schema(description = "数据范围")
+    @Schema(description = "数据范围 1=全部 5=仅本人")
     private Integer dataScope;
+    @Schema(description = "菜单树选择项是否关联显示")
+    private Boolean menuCheckStrictly;
+    @Schema(description = "部门树选择项是否关联显示")
+    private Boolean deptCheckStrictly;
     @Schema(description = "备注")
     private String remark;
 }

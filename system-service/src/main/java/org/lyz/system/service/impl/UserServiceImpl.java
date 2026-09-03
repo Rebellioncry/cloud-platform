@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import org.lyz.common.core.context.LoginHelper;
 import org.lyz.common.core.context.UserContext;
 import org.lyz.common.core.exception.BusinessException;
 import org.lyz.system.dto.UserDTO;
@@ -37,7 +38,7 @@ public class UserServiceImpl implements UserService {
     public PageResult<UserDTO> list(int page, int size) {
         Page<SysUser> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        if (!UserContext.isPlatformAdmin()) {
+        if (!UserContext.isSuperAdmin()) {
             String tenantId = UserContext.getTenantId();
             if (tenantId != null && !tenantId.isEmpty()) {
                 wrapper.eq(SysUser::getTenantId, tenantId);
@@ -117,8 +118,8 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("用户ID不能为空");
         }
         SysUser existing = userDao.getById(dto.getId());
-        if (existing != null && "PLATFORM".equals(existing.getTenantScope())) {
-            throw new BusinessException("不允许修改平台管理员");
+        if (existing != null && LoginHelper.isSuperAdmin(existing.getId())) {
+            throw new BusinessException("不允许修改超级管理员");
         }
         SysUser user = toEntity(dto);
         userDao.updateById(user);
@@ -134,8 +135,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public void delete(String id) {
         SysUser existing = userDao.getById(id);
-        if (existing != null && "PLATFORM".equals(existing.getTenantScope())) {
-            throw new BusinessException("不允许删除平台管理员");
+        if (existing != null && LoginHelper.isSuperAdmin(existing.getId())) {
+            throw new BusinessException("不允许删除超级管理员");
         }
         userDao.removeById(id);
         userDao.deleteUserRoles(id);
@@ -144,8 +145,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public void resetPassword(String id, String password) {
         SysUser existing = userDao.getById(id);
-        if (existing != null && "PLATFORM".equals(existing.getTenantScope())) {
-            throw new BusinessException("不允许重置平台管理员密码");
+        if (existing != null && LoginHelper.isSuperAdmin(existing.getId())) {
+            throw new BusinessException("不允许重置超级管理员密码");
         }
         LambdaUpdateWrapper<SysUser> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(SysUser::getId, id)
@@ -157,8 +158,8 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public void assignRoles(String userId, List<String> roleIds) {
         SysUser existing = userDao.getById(userId);
-        if (existing != null && "PLATFORM".equals(existing.getTenantScope())) {
-            throw new BusinessException("不允许修改平台管理员角色");
+        if (existing != null && LoginHelper.isSuperAdmin(existing.getId())) {
+            throw new BusinessException("不允许修改超级管理员角色");
         }
         userDao.deleteUserRoles(userId);
         if (roleIds != null && !roleIds.isEmpty()) {
@@ -187,7 +188,6 @@ public class UserServiceImpl implements UserService {
         dto.setAvatar(user.getAvatar());
         dto.setStatus(user.getStatus());
         dto.setTenantId(user.getTenantId());
-        dto.setTenantScope(user.getTenantScope());
         dto.setCreateTime(user.getCreateTime());
         return dto;
     }

@@ -9,7 +9,7 @@ export function getDashboardOverview() {
 // ==================== 产品管理 ====================
 
 export function getProductList(params) {
-  return request({ url: '/iot/product/list', method: 'get', params })
+  return request({ url: '/iot/product', method: 'get', params })
 }
 
 export function getProduct(id) {
@@ -43,7 +43,7 @@ export function updateThingModel(id, thingModel) {
 // ==================== 设备管理 ====================
 
 export function getDeviceList(params) {
-  return request({ url: '/iot/device/list', method: 'get', params })
+  return request({ url: '/iot/device', method: 'get', params })
 }
 
 export function getDevice(id) {
@@ -83,7 +83,7 @@ export function getPropertyHistory(id, propertyId, params) {
 // ==================== 设备功能 ====================
 
 export function listDeviceFunctions(id) {
-  return request({ url: `/iot/device/${id}/function/list`, method: 'get' })
+  return request({ url: `/iot/device/${id}/function`, method: 'get' })
 }
 
 export function invokeDeviceFunction(id, data) {
@@ -113,7 +113,7 @@ export function getDeviceShadowDiff(id) {
 // ==================== MQTT配置 ====================
 
 export function getMqttConfigList(params) {
-  return request({ url: '/iot/mqtt/config/list', method: 'get', params })
+  return request({ url: '/iot/mqtt/config', method: 'get', params })
 }
 
 export function getMqttConfig(id) {
@@ -143,7 +143,7 @@ export function stopMqttConfig(id) {
 // ==================== 规则引擎 ====================
 
 export function getRuleList(params) {
-  return request({ url: '/iot/rule/list', method: 'get', params })
+  return request({ url: '/iot/rule', method: 'get', params })
 }
 
 export function getRule(id) {
@@ -173,13 +173,13 @@ export function stopRule(id) {
 // ==================== 规则执行日志 ====================
 
 export function getRuleLogList(params) {
-  return request({ url: '/iot/rule/log/list', method: 'get', params })
+  return request({ url: '/iot/rule/log', method: 'get', params })
 }
 
 // ==================== 文件存储 ====================
 
 export function getFileStorageList(params) {
-  return request({ url: '/iot/file-storage/list', method: 'get', params })
+  return request({ url: '/iot/file-storage', method: 'get', params })
 }
 
 export function getFileStorage(id) {
@@ -205,7 +205,7 @@ export function testFileStorage(id) {
 // ==================== 固件管理 ====================
 
 export function getFirmwareList(params) {
-  return request({ url: '/iot/firmware/list', method: 'get', params })
+  return request({ url: '/iot/firmware', method: 'get', params })
 }
 
 export function getFirmware(id) {
@@ -213,7 +213,7 @@ export function getFirmware(id) {
 }
 
 export function uploadFirmware(data) {
-  return request({ url: '/iot/firmware/upload', method: 'post', data, headers: { 'Content-Type': 'multipart/form-data' } })
+  return request({ url: '/iot/firmware', method: 'post', data, headers: { 'Content-Type': 'multipart/form-data' } })
 }
 
 export function updateFirmware(id, data) {
@@ -227,7 +227,7 @@ export function deleteFirmware(id) {
 // ==================== OTA升级 ====================
 
 export function getOtaTaskList(params) {
-  return request({ url: '/iot/ota/task/list', method: 'get', params })
+  return request({ url: '/iot/ota/task', method: 'get', params })
 }
 
 export function getOtaTask(id) {

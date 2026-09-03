@@ -120,20 +120,10 @@ const loadData = async () => {
 const loadMenuTree = async () => {
   try {
     const res = await getMenuTree()
-    menuTreeData.value = filterTenantMenus(res.data || [])
+    menuTreeData.value = res.data || []
   } catch (error) {
     console.error('加载菜单失败:', error)
   }
-}
-
-const filterTenantMenus = (menus) => {
-  return menus
-    .filter(m => m.scope === 'TENANT')
-    .map(m => ({
-      ...m,
-      children: m.children ? filterTenantMenus(m.children) : []
-    }))
-    .filter(m => m.children?.length > 0 || m.menuType !== 0 || m.path)
 }
 
 const getLeafNodeIds = (nodes) => {
@@ -235,7 +225,7 @@ const handleSubmit = async () => {
 
   try {
     if (isEdit.value) {
-      await updatePackage({ ...form })
+      await updatePackage(form.id, { ...form })
       ElMessage.success('更新成功')
     } else {
       await createPackage({ ...form })

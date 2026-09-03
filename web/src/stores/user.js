@@ -9,8 +9,7 @@ export const useUserStore = defineStore('user', () => {
   const impersonating = ref(JSON.parse(localStorage.getItem('impersonate') || 'null'))
 
   const isLoggedIn = computed(() => !!token.value)
-  const isPlatformAdmin = computed(() => userInfo.value?.tenantScope === 'PLATFORM')
-  const tenantScope = computed(() => userInfo.value?.tenantScope || 'TENANT')
+  const isSuperAdmin = computed(() => userInfo.value?.userId === '2')
   const isImpersonating = computed(() => !!impersonating.value)
   const impersonateTenantName = computed(() => impersonating.value?.tenantName || '')
 
@@ -62,8 +61,7 @@ export const useUserStore = defineStore('user', () => {
     userInfo,
     permissions,
     isLoggedIn,
-    isPlatformAdmin,
-    tenantScope,
+    isSuperAdmin,
     isImpersonating,
     impersonateTenantName,
     impersonating,

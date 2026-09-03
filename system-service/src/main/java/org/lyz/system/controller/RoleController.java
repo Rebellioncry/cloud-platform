@@ -23,7 +23,7 @@ public class RoleController {
     private final RoleService roleService;
 
     @Operation(summary = "角色列表", description = "分页获取角色列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<SysRole>> list(
             @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
             @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size) {
@@ -46,9 +46,11 @@ public class RoleController {
     }
 
     @Operation(summary = "更新角色", description = "修改角色信息")
-    @PutMapping
+    @PutMapping("/{id}")
     public Result<Void> update(
+            @Parameter(description = "角色ID") @PathVariable(value = "id") String id,
             @Parameter(description = "角色信息") @Valid @RequestBody RoleDTO dto) {
+        dto.setId(id);
         roleService.update(dto);
         return Result.success();
     }

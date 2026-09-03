@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 用户管理
 export function getUserList(params) {
   return request({
-    url: '/system/user/list',
+    url: '/system/user',
     method: 'get',
     params
   })
@@ -24,9 +24,9 @@ export function addUser(data) {
   })
 }
 
-export function updateUser(data) {
+export function updateUser(id, data) {
   return request({
-    url: '/system/user',
+    url: `/system/user/${id}`,
     method: 'put',
     data
   })
@@ -58,7 +58,7 @@ export function getRole(id) {
 
 export function getRoleList(params) {
   return request({
-    url: '/system/role/list',
+    url: '/system/role',
     method: 'get',
     params
   })
@@ -72,9 +72,9 @@ export function addRole(data) {
   })
 }
 
-export function updateRole(data) {
+export function updateRole(id, data) {
   return request({
-    url: '/system/role',
+    url: `/system/role/${id}`,
     method: 'put',
     data
   })
@@ -99,7 +99,7 @@ export function assignMenus(roleId, menuIds) {
 // 菜单管理
 export function getMenuList(params) {
   return request({
-    url: '/system/menu/list',
+    url: '/system/menu',
     method: 'get',
     params
   })
@@ -120,9 +120,9 @@ export function addMenu(data) {
   })
 }
 
-export function updateMenu(data) {
+export function updateMenu(id, data) {
   return request({
-    url: '/system/menu',
+    url: `/system/menu/${id}`,
     method: 'put',
     data
   })
@@ -138,7 +138,7 @@ export function deleteMenu(id) {
 // 租户管理
 export function getTenantList(params) {
   return request({
-    url: '/system/tenant/list',
+    url: '/system/tenant',
     method: 'get',
     params
   })
@@ -159,9 +159,9 @@ export function addTenant(data) {
   })
 }
 
-export function updateTenant(data) {
+export function updateTenant(id, data) {
   return request({
-    url: '/system/tenant',
+    url: `/system/tenant/${id}`,
     method: 'put',
     data
   })
@@ -177,7 +177,7 @@ export function deleteTenant(id) {
 // 审计日志
 export function getAuditLogList(params) {
   return request({
-    url: '/system/audit/list',
+    url: '/system/audit',
     method: 'get',
     params
   })
@@ -186,7 +186,7 @@ export function getAuditLogList(params) {
 // 平台管理
 export function getPlatformTenantList(params) {
   return request({
-    url: '/system/platform/tenant/list',
+    url: '/system/platform/tenant',
     method: 'get',
     params
   })
@@ -240,7 +240,7 @@ export function returnFromImpersonate() {
 // 套餐管理
 export function getPackageList(params) {
   return request({
-    url: '/system/platform/package/list',
+    url: '/system/platform/package',
     method: 'get',
     params
   })
@@ -261,9 +261,9 @@ export function createPackage(data) {
   })
 }
 
-export function updatePackage(data) {
+export function updatePackage(id, data) {
   return request({
-    url: '/system/platform/package',
+    url: `/system/platform/package/${id}`,
     method: 'put',
     data
   })

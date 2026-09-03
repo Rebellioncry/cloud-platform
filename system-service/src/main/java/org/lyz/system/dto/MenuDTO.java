@@ -20,10 +20,8 @@ public class MenuDTO {
     @Schema(description = "菜单名称", requiredMode = Schema.RequiredMode.REQUIRED)
     private String menuName;
     
-    @Schema(description = "菜单类型")
-    private Integer menuType;
-    @Schema(description = "作用域: PLATFORM=平台, TENANT=租户")
-    private String scope;
+    @Schema(description = "菜单类型: M=目录 C=菜单 F=按钮")
+    private String menuType;
     @Schema(description = "路由地址")
     private String path;
     @Schema(description = "组件路径")

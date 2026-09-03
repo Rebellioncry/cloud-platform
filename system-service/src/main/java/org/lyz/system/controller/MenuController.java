@@ -23,7 +23,7 @@ public class MenuController {
     private final MenuService menuService;
 
     @Operation(summary = "菜单列表", description = "分页获取菜单列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<SysMenu>> list(
             @Parameter(description = "页码") @RequestParam(value = "page", defaultValue = "1") int page,
             @Parameter(description = "每页大小") @RequestParam(value = "size", defaultValue = "10") int size) {
@@ -52,9 +52,11 @@ public class MenuController {
     }
 
     @Operation(summary = "更新菜单", description = "修改菜单信息")
-    @PutMapping
+    @PutMapping("/{id}")
     public Result<Void> update(
+            @Parameter(description = "菜单ID") @PathVariable(value = "id") String id,
             @Parameter(description = "菜单信息") @Valid @RequestBody MenuDTO dto) {
+        dto.setId(id);
         menuService.update(dto);
         return Result.success();
     }

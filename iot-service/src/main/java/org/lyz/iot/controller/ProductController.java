@@ -22,7 +22,7 @@ public class ProductController {
     private final ProductService productService;
 
     @Operation(summary = "产品列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<IotProduct>> list(@RequestParam(value = "page", defaultValue = "1") int page,
                                                 @RequestParam(value = "size", defaultValue = "10") int size,
                                                 @RequestParam(value = "name", required = false) String name) {

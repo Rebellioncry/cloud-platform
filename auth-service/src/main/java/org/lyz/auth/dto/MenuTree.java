@@ -27,8 +27,8 @@ public class MenuTree {
     private String icon;
     @Schema(description = "权限标识")
     private String perms;
-    @Schema(description = "菜单类型")
-    private Integer menuType;
+    @Schema(description = "菜单类型: M=目录, C=菜单, F=按钮")
+    private String menuType;
     @Schema(description = "子菜单")
     private List<MenuTree> children;
 }

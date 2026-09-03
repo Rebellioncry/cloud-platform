@@ -18,7 +18,7 @@ public class RuleLogController {
     private final RuleLogService ruleLogService;
 
     @Operation(summary = "日志列表")
-    @GetMapping("/list")
+    @GetMapping
     public Result<PageResult<IotRuleExecLog>> list(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "20") int size,

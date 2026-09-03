@@ -20,7 +20,7 @@ public class DeviceFunctionController {
     private final DeviceFunctionService functionService;
 
     @Operation(summary = "设备功能列表")
-    @GetMapping("/{id}/function/list")
+    @GetMapping("/{id}/function")
     public Result<List<DeviceFunctionDTO>> listFunctions(@PathVariable(value = "id") String deviceId) {
         return Result.success(functionService.listFunctions(deviceId));
     }

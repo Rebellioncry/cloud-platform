@@ -24,14 +24,10 @@ public class RoleDTO {
     private Integer roleSort;
     @Schema(description = "状态")
     private Integer status;
-    @Schema(description = "数据范围")
+    @Schema(description = "数据范围 1=全部 5=仅本人")
     private Integer dataScope;
-    @Schema(description = "角色作用域: PLATFORM=平台角色, TENANT=租户角色")
-    private String scope;
     @Schema(description = "租户ID")
     private String tenantId;
-    @Schema(description = "系统内置: 0=否, 1=是")
-    private Integer isSystem;
     @Schema(description = "备注")
     private String remark;
     @Schema(description = "菜单ID列表")

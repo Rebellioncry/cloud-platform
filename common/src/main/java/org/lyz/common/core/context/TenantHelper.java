@@ -61,7 +61,6 @@ public final class TenantHelper {
         String originalTenantId = TenantContext.getTenantId();
         String originalUserId = TenantContext.getUserId();
         String originalUsername = TenantContext.getUsername();
-        String originalScope = TenantContext.getTenantScope();
         try {
             TenantContext.setTenantId(tenantId);
             handle.run();
@@ -76,9 +75,6 @@ public final class TenantHelper {
             }
             if (originalUsername != null) {
                 TenantContext.setUsername(originalUsername);
-            }
-            if (originalScope != null) {
-                TenantContext.setTenantScope(originalScope);
             }
         }
     }
@@ -126,9 +122,9 @@ public final class TenantHelper {
     // ==================== 便捷判断 ====================
 
     /**
-     * 当前用户是否为平台管理员。
+     * 当前用户是否为超级管理员。
      */
-    public static boolean isPlatformAdmin() {
-        return UserContext.isPlatformAdmin();
+    public static boolean isSuperAdmin() {
+        return UserContext.isSuperAdmin();
     }
 }
